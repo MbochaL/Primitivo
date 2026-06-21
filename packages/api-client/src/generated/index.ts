@@ -7,8 +7,13 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { dto_ActualizarClienteRequest } from './models/dto_ActualizarClienteRequest';
 export type { dto_ActualizarInstitucionRequest } from './models/dto_ActualizarInstitucionRequest';
 export { dto_ActualizarUsuarioRequest } from './models/dto_ActualizarUsuarioRequest';
+export type { dto_BeneficioDisponibleResponse } from './models/dto_BeneficioDisponibleResponse';
+export type { dto_ClienteResponse } from './models/dto_ClienteResponse';
+export type { dto_CompraResponse } from './models/dto_CompraResponse';
+export type { dto_CrearClienteRequest } from './models/dto_CrearClienteRequest';
 export type { dto_CrearInstitucionRequest } from './models/dto_CrearInstitucionRequest';
 export { dto_CrearUsuarioRequest } from './models/dto_CrearUsuarioRequest';
 export type { dto_InstitucionResponse } from './models/dto_InstitucionResponse';
@@ -21,8 +26,13 @@ export type { handler_HealthResponse } from './models/handler_HealthResponse';
 export type { response_ErrorBody } from './models/response_ErrorBody';
 export type { response_ErrorResponse } from './models/response_ErrorResponse';
 
+export { $dto_ActualizarClienteRequest } from './schemas/$dto_ActualizarClienteRequest';
 export { $dto_ActualizarInstitucionRequest } from './schemas/$dto_ActualizarInstitucionRequest';
 export { $dto_ActualizarUsuarioRequest } from './schemas/$dto_ActualizarUsuarioRequest';
+export { $dto_BeneficioDisponibleResponse } from './schemas/$dto_BeneficioDisponibleResponse';
+export { $dto_ClienteResponse } from './schemas/$dto_ClienteResponse';
+export { $dto_CompraResponse } from './schemas/$dto_CompraResponse';
+export { $dto_CrearClienteRequest } from './schemas/$dto_CrearClienteRequest';
 export { $dto_CrearInstitucionRequest } from './schemas/$dto_CrearInstitucionRequest';
 export { $dto_CrearUsuarioRequest } from './schemas/$dto_CrearUsuarioRequest';
 export { $dto_InstitucionResponse } from './schemas/$dto_InstitucionResponse';
@@ -36,6 +46,7 @@ export { $response_ErrorBody } from './schemas/$response_ErrorBody';
 export { $response_ErrorResponse } from './schemas/$response_ErrorResponse';
 
 export { AuthService } from './services/AuthService';
+export { ClientesService } from './services/ClientesService';
 export { HealthService } from './services/HealthService';
 export { InstitucionesService } from './services/InstitucionesService';
 export { UsuariosService } from './services/UsuariosService';

@@ -1,0 +1,16 @@
+# Live-reload del backend Go con air. Recompila y reinicia al cambiar archivos .go.
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/api.exe ./cmd/api"
+  bin = "tmp/api.exe"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "docs", "bin", "db"]
+  delay = 500
+  stop_on_error = true
+  send_interrupt = true
+  kill_delay = 1000
+
+[misc]
+  clean_on_exit = true

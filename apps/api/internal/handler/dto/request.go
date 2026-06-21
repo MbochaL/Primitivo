@@ -43,3 +43,18 @@ type ActualizarInstitucionRequest struct {
 	Nombre string `json:"nombre" binding:"required"`
 	Activa *bool  `json:"activa" binding:"required"`
 }
+
+// CrearClienteRequest es el cuerpo de POST /clientes.
+type CrearClienteRequest struct {
+	DNI           string  `json:"dni" binding:"required"`
+	Nombre        string  `json:"nombre" binding:"required"`
+	Email         *string `json:"email" binding:"omitempty,email"`
+	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
+}
+
+// ActualizarClienteRequest es el cuerpo de PUT /clientes/:id (el DNI no se edita).
+type ActualizarClienteRequest struct {
+	Nombre        string  `json:"nombre" binding:"required"`
+	Email         *string `json:"email" binding:"omitempty,email"`
+	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
+}

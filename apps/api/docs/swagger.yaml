@@ -1,5 +1,16 @@
 basePath: /api/v1
 definitions:
+  dto.ActualizarClienteRequest:
+    properties:
+      email:
+        type: string
+      institucion_id:
+        type: string
+      nombre:
+        type: string
+    required:
+    - nombre
+    type: object
   dto.ActualizarInstitucionRequest:
     properties:
       activa:
@@ -25,6 +36,67 @@ definitions:
     - activo
     - email
     - rol
+    type: object
+  dto.BeneficioDisponibleResponse:
+    properties:
+      alcanzado:
+        type: boolean
+      beneficio_nombre:
+        type: string
+      reinicia_contador:
+        type: boolean
+      tipo_descuento:
+        type: string
+      umbral_infusiones:
+        type: integer
+      valor_descuento:
+        type: integer
+    type: object
+  dto.ClienteResponse:
+    properties:
+      contador_infusiones:
+        type: integer
+      created_at:
+        type: string
+      dni:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      institucion_id:
+        type: string
+      institucion_nombre:
+        type: string
+      nombre:
+        type: string
+    type: object
+  dto.CompraResponse:
+    properties:
+      descuento:
+        type: integer
+      fecha:
+        type: string
+      id:
+        type: string
+      subtotal:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.CrearClienteRequest:
+    properties:
+      dni:
+        type: string
+      email:
+        type: string
+      institucion_id:
+        type: string
+      nombre:
+        type: string
+    required:
+    - dni
+    - nombre
     type: object
   dto.CrearInstitucionRequest:
     properties:
@@ -190,6 +262,164 @@ paths:
       summary: Renovar tokens
       tags:
       - auth
+  /clientes:
+    get:
+      parameters:
+      - description: Buscar por DNI exacto (búsqueda principal del dashboard)
+        in: query
+        name: dni
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClienteResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar clientes (o buscar por DNI con ?dni=)
+      tags:
+      - clientes
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del cliente
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrearClienteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ClienteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Registrar un cliente
+      tags:
+      - clientes
+  /clientes/{id}:
+    get:
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClienteResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener un cliente por ID
+      tags:
+      - clientes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActualizarClienteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClienteResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar un cliente
+      tags:
+      - clientes
+  /clientes/{id}/beneficios:
+    get:
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.BeneficioDisponibleResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Beneficios disponibles del cliente
+      tags:
+      - clientes
+  /clientes/{id}/historial:
+    get:
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CompraResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Historial de compras del cliente
+      tags:
+      - clientes
   /health:
     get:
       produces:

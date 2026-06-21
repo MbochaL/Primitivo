@@ -60,16 +60,19 @@ func main() {
 	// La cadena se arma de adentro hacia afuera: pool → repos → services → handlers.
 	usuarioRepo := postgres.NewUsuarioRepo(pool)
 	institucionRepo := postgres.NewInstitucionRepo(pool)
+	clienteRepo := postgres.NewClienteRepo(pool)
 
 	authService := service.NewAuthService(usuarioRepo, jwtManager)
 	usuarioService := service.NewUsuarioService(usuarioRepo)
 	institucionService := service.NewInstitucionService(institucionRepo)
+	clienteService := service.NewClienteService(clienteRepo)
 
 	handlers := router.Handlers{
 		Health:      handler.NewHealthHandler(pool),
 		Auth:        handler.NewAuthHandler(authService),
 		Usuario:     handler.NewUsuarioHandler(usuarioService),
 		Institucion: handler.NewInstitucionHandler(institucionService),
+		Cliente:     handler.NewClienteHandler(clienteService),
 	}
 
 	engine := router.New(cfg, jwtManager, handlers)

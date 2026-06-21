@@ -79,6 +79,40 @@ pnpm --filter @primitivo/web dev    # expo start --web (http://localhost:8081)
 pnpm --filter @primitivo/web build  # expo export --platform web → dist/
 ```
 
+## Desarrollo local (hot-reload)
+
+El objetivo: ver los cambios del front y del back en tiempo real, **sin pushear**, con la
+web apuntando a la **API local** (no a Render).
+
+**Requisitos (una vez):**
+- `go` en el PATH y las tools Go instaladas (`air` para live-reload del backend:
+  `go install github.com/air-verse/air@latest`).
+- `.env` en la raíz con `DATABASE_URL` (apunta a Neon o a un Postgres local) y `JWT_SECRET`.
+- `apps/web/.env` con `EXPO_PUBLIC_API_URL=http://localhost:8080/api/v1` (ya incluido;
+  copialo de `apps/web/.env.example` si falta). Así el front local pega a la API local.
+
+**Dos terminales (recomendado):**
+
+```bash
+# Terminal 1 — API con recarga en caliente (recompila al guardar .go)
+pnpm --filter @primitivo/api dev:watch     # air → http://localhost:8080
+
+# Terminal 2 — Front con Fast Refresh
+pnpm --filter @primitivo/web dev           # expo → http://localhost:8081
+```
+
+Guardás un archivo y se refleja solo: el front con Fast Refresh, el back recompilado por air.
+
+> Atajo: `pnpm dev` levanta ambos a la vez (la API con `go run`, sin live-reload). Para
+> recarga del backend usá `dev:watch` como arriba.
+
+**Login local:** mismas credenciales sembradas en la base (admin) — la API local usa la
+misma `DATABASE_URL`. En `localhost` el service worker no se registra, así que no hay caché
+que limpiar mientras desarrollás.
+
+**Antes de pushear:** verificá local, y cuando estés conforme, commiteás y pusheás (recién
+ahí Vercel/Render publican).
+
 ### Flujo del contrato API (code-first con swaggo)
 
 1. Anotar el handler de Gin con swaggo (`// @Summary`, `// @Router`, …).

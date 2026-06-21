@@ -5,6 +5,7 @@
   "description": "Backend Go (Gin + sqlc + pgx) de Primitivo. Workspace opaco: las dependencias se gestionan con go.mod.",
   "scripts": {
     "dev": "go run ./cmd/api",
+    "dev:watch": "air",
     "build": "go build -o bin/api ./cmd/api",
     "lint": "go vet ./...",
     "type-check": "go build ./...",

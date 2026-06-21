@@ -11,13 +11,20 @@ import (
 )
 
 type Querier interface {
+	CreateCliente(ctx context.Context, arg CreateClienteParams) (Cliente, error)
 	CreateInstitucion(ctx context.Context, nombre string) (Institucione, error)
 	CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (UsuariosSistema, error)
+	GetClientePorDNI(ctx context.Context, dni string) (GetClientePorDNIRow, error)
+	GetClientePorID(ctx context.Context, id uuid.UUID) (GetClientePorIDRow, error)
 	GetInstitucionByID(ctx context.Context, id uuid.UUID) (Institucione, error)
 	GetUsuarioByEmail(ctx context.Context, email string) (UsuariosSistema, error)
 	GetUsuarioByID(ctx context.Context, id uuid.UUID) (UsuariosSistema, error)
+	ListClientes(ctx context.Context) ([]ListClientesRow, error)
+	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)
+	ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error)
 	ListInstituciones(ctx context.Context) ([]Institucione, error)
 	ListUsuarios(ctx context.Context) ([]UsuariosSistema, error)
+	UpdateCliente(ctx context.Context, arg UpdateClienteParams) (Cliente, error)
 	UpdateInstitucion(ctx context.Context, arg UpdateInstitucionParams) (Institucione, error)
 	UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (UsuariosSistema, error)
 	UpdateUsuarioPassword(ctx context.Context, arg UpdateUsuarioPasswordParams) error

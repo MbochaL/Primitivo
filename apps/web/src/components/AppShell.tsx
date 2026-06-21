@@ -1,15 +1,13 @@
 import { Icon, Label, theme, type IconName } from '@primitivo/ui';
-import { Link, usePathname } from 'expo-router';
-import { type ComponentProps, type ReactNode } from 'react';
+import { type Href, usePathname, useRouter } from 'expo-router';
+import { type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 
-type Href = ComponentProps<typeof Link>['href'];
-
 interface NavItem {
-  // Se tipa como string y se castea a Href en el <Link>: los tipos de ruta generados
-  // por Expo Router se regeneran al correr Metro y pueden quedar desfasados en tsc.
+  // Se tipa como string y se castea a Href al navegar: los tipos de ruta generados por
+  // Expo Router se regeneran al correr Metro y pueden quedar desfasados en tsc.
   href: string;
   label: string;
   icon: IconName;
@@ -78,6 +76,7 @@ function Sidebar({
   esAdmin: boolean;
   onLogout: () => void;
 }) {
+  const router = useRouter();
   return (
     <View style={styles.sidebar}>
       <View style={styles.sidebarBrand}>
@@ -87,16 +86,18 @@ function Sidebar({
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           return (
-            <Link key={item.href} href={item.href as Href} asChild>
-              <Pressable style={[styles.navLink, active && styles.navLinkActive]}>
-                <Icon
-                  name={item.icon}
-                  size={22}
-                  color={active ? theme.colors.black : theme.colors.white}
-                />
-                <Text style={[styles.navLabel, active && styles.navLabelActive]}>{item.label}</Text>
-              </Pressable>
-            </Link>
+            <Pressable
+              key={item.href}
+              onPress={() => router.navigate(item.href as Href)}
+              style={[styles.navLink, active && styles.navLinkActive]}
+            >
+              <Icon
+                name={item.icon}
+                size={22}
+                color={active ? theme.colors.black : theme.colors.white}
+              />
+              <Text style={[styles.navLabel, active && styles.navLabelActive]}>{item.label}</Text>
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -120,21 +121,24 @@ function TopBar({ onLogout }: { onLogout: () => void }) {
 }
 
 function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
+  const router = useRouter();
   return (
     <View style={styles.bottomnav}>
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
-          <Link key={item.href} href={item.href as Href} asChild>
-            <Pressable style={[styles.tab, active && styles.tabActive]}>
-              <Icon
-                name={item.icon}
-                size={22}
-                color={active ? theme.colors.white : theme.colors.onSurfaceVariant}
-              />
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{item.label}</Text>
-            </Pressable>
-          </Link>
+          <Pressable
+            key={item.href}
+            onPress={() => router.navigate(item.href as Href)}
+            style={[styles.tab, active && styles.tabActive]}
+          >
+            <Icon
+              name={item.icon}
+              size={22}
+              color={active ? theme.colors.white : theme.colors.onSurfaceVariant}
+            />
+            <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{item.label}</Text>
+          </Pressable>
         );
       })}
     </View>

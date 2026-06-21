@@ -17,6 +17,7 @@ type Handlers struct {
 	Auth        *handler.AuthHandler
 	Usuario     *handler.UsuarioHandler
 	Institucion *handler.InstitucionHandler
+	Cliente     *handler.ClienteHandler
 }
 
 // New construye el motor Gin con sus middlewares globales y rutas registradas.
@@ -48,6 +49,14 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 		{
 			// Lectura compartida por ambos roles (operador y administrador).
 			protegidas.GET("/instituciones", h.Institucion.List)
+
+			// Clientes — operación diaria, ambos roles.
+			protegidas.GET("/clientes", h.Cliente.List)
+			protegidas.POST("/clientes", h.Cliente.Crear)
+			protegidas.GET("/clientes/:id", h.Cliente.GetByID)
+			protegidas.PUT("/clientes/:id", h.Cliente.Actualizar)
+			protegidas.GET("/clientes/:id/historial", h.Cliente.Historial)
+			protegidas.GET("/clientes/:id/beneficios", h.Cliente.Beneficios)
 
 			// Gestión — solo administrador.
 			admin := protegidas.Group("")
