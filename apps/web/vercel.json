@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "npx expo export --platform web",
+  "installCommand": "npx pnpm@11.8.0 install --frozen-lockfile",
+  "buildCommand": "npx pnpm@11.8.0 exec expo export --platform web",
   "outputDirectory": "dist"
 }
