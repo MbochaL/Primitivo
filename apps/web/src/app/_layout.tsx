@@ -1,6 +1,12 @@
 import { setApiBaseUrl } from '@primitivo/api-client';
 import { theme } from '@primitivo/ui';
-import { Oswald_500Medium, Oswald_700Bold, useFonts } from '@expo-google-fonts/oswald';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_700Bold,
+  useFonts,
+} from '@expo-google-fonts/inter';
+import { Oswald_500Medium, Oswald_600SemiBold, Oswald_700Bold } from '@expo-google-fonts/oswald';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -16,7 +22,14 @@ setApiBaseUrl(apiUrl);
 
 export default function RootLayout() {
   const [queryClient] = useState(() => new QueryClient());
-  const [fontsLoaded] = useFonts({ Oswald_500Medium, Oswald_700Bold });
+  const [fontsLoaded] = useFonts({
+    Oswald_500Medium,
+    Oswald_600SemiBold,
+    Oswald_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_700Bold,
+  });
 
   if (!fontsLoaded) {
     return (

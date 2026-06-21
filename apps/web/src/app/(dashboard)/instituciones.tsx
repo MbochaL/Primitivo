@@ -4,16 +4,14 @@ import { StyleSheet } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 
-export default function BeneficiosScreen() {
+export default function InstitucionesScreen() {
   const { esAdmin } = useAuth();
   if (!esAdmin) return <Redirect href="/clientes" />;
 
   return (
     <Screen>
-      <Title>Beneficios</Title>
-      <Body style={styles.p}>
-        Beneficios por institución y sus condiciones (umbrales de infusiones). (en construcción)
-      </Body>
+      <Title>Instituciones</Title>
+      <Body style={styles.p}>Convenios: crear y editar instituciones. (en construcción)</Body>
     </Screen>
   );
 }

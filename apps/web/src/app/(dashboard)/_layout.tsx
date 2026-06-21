@@ -1,7 +1,8 @@
 import { theme } from '@primitivo/ui';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Slot } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
+import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/lib/auth';
 
 export default function DashboardLayout() {
@@ -20,7 +21,11 @@ export default function DashboardLayout() {
     return <Redirect href="/login" />;
   }
 
-  return <Stack screenOptions={{ headerShown: true, title: 'Primitivo' }} />;
+  return (
+    <AppShell>
+      <Slot />
+    </AppShell>
+  );
 }
 
 const styles = {
@@ -28,6 +33,6 @@ const styles = {
     flex: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
   },
 };

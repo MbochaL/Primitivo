@@ -11,7 +11,8 @@
       "PowerShell(pnpm create expo-app apps/web --template default --no-install --yes)",
       "PowerShell(pnpm install 2>&1)",
       "PowerShell(pnpm --filter @primitivo/web run build)",
-      "PowerShell(pnpm --filter @primitivo/web run build 2>&1)"
+      "PowerShell(pnpm --filter @primitivo/web run build 2>&1)",
+      "Bash(curl -s https://primitivo.vercel.app/)"
     ]
   }
 }

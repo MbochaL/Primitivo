@@ -1,31 +1,21 @@
-import { theme } from '@primitivo/ui';
-import { StyleSheet, Text, View } from 'react-native';
+import { Body, Screen, theme, Title } from '@primitivo/ui';
+import { Redirect } from 'expo-router';
+import { StyleSheet } from 'react-native';
+
+import { useAuth } from '@/lib/auth';
 
 export default function MenuScreen() {
+  const { esAdmin } = useAuth();
+  if (!esAdmin) return <Redirect href="/clientes" />;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Menú</Text>
-      <Text style={styles.body}>
-        Gestión de categorías y productos del menú. (pendiente de implementar)
-      </Text>
-    </View>
+    <Screen>
+      <Title>Menú</Title>
+      <Body style={styles.p}>Gestión de categorías y productos. (en construcción)</Body>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.white,
-    padding: theme.spacing.xl,
-    gap: theme.spacing.md,
-  },
-  title: {
-    color: theme.colors.black,
-    fontSize: theme.typography.fontSize.title,
-    fontWeight: theme.typography.fontWeight.bold,
-  },
-  body: {
-    color: theme.colors.gray700,
-    fontSize: theme.typography.fontSize.body,
-  },
+  p: { color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.sm },
 });

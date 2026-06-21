@@ -5,7 +5,16 @@ import { theme } from '../theme';
 
 type Props = TextProps & { children: ReactNode };
 
-/** Título display condensado (estética editorial, mayúsculas). */
+/** Número/dato gigante (display-xl, Oswald). Para métricas destacadas. */
+export function Display({ children, style, ...rest }: Props) {
+  return (
+    <Text style={[styles.display, style]} {...rest}>
+      {children}
+    </Text>
+  );
+}
+
+/** Título display condensado en mayúsculas (Oswald bold). */
 export function Title({ children, style, ...rest }: Props) {
   return (
     <Text style={[styles.title, style]} {...rest}>
@@ -14,7 +23,7 @@ export function Title({ children, style, ...rest }: Props) {
   );
 }
 
-/** Encabezado de sección condensado. */
+/** Encabezado de sección (Oswald semibold, mayúsculas). */
 export function Heading({ children, style, ...rest }: Props) {
   return (
     <Text style={[styles.heading, style]} {...rest}>
@@ -23,7 +32,7 @@ export function Heading({ children, style, ...rest }: Props) {
   );
 }
 
-/** Texto de cuerpo. */
+/** Texto de cuerpo (Inter). */
 export function Body({ children, style, ...rest }: Props) {
   return (
     <Text style={[styles.body, style]} {...rest}>
@@ -32,7 +41,7 @@ export function Body({ children, style, ...rest }: Props) {
   );
 }
 
-/** Texto secundario pequeño (gris). */
+/** Texto secundario chico (Inter, gris). */
 export function Caption({ children, style, ...rest }: Props) {
   return (
     <Text style={[styles.caption, style]} {...rest}>
@@ -41,7 +50,7 @@ export function Caption({ children, style, ...rest }: Props) {
   );
 }
 
-/** Etiqueta de formulario (mayúsculas, tracking). */
+/** Etiqueta/metadato en mayúsculas con tracking (Inter bold). */
 export function Label({ children, style, ...rest }: Props) {
   return (
     <Text style={[styles.label, style]} {...rest}>
@@ -51,36 +60,42 @@ export function Label({ children, style, ...rest }: Props) {
 }
 
 const styles = StyleSheet.create({
+  display: {
+    fontFamily: theme.typography.fontFamily.display,
+    fontSize: theme.typography.fontSize.displayXl,
+    color: theme.colors.onSurface,
+    letterSpacing: -1,
+  },
   title: {
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.fontSize.display,
-    color: theme.colors.black,
+    fontFamily: theme.typography.fontFamily.display,
+    fontSize: theme.typography.fontSize.headlineLg,
+    color: theme.colors.onSurface,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: -0.5,
   },
   heading: {
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.fontSize.title,
-    color: theme.colors.black,
+    fontFamily: theme.typography.fontFamily.headingMedium,
+    fontSize: theme.typography.fontSize.headlineMd,
+    color: theme.colors.onSurface,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   body: {
     fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.gray900,
+    fontSize: theme.typography.fontSize.bodyMd,
+    color: theme.colors.onSurface,
+    lineHeight: theme.typography.fontSize.bodyMd * theme.typography.lineHeight.normal,
   },
   caption: {
     fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.caption,
-    color: theme.colors.gray500,
+    fontSize: theme.typography.fontSize.labelSm,
+    color: theme.colors.onSurfaceVariant,
   },
   label: {
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.caption,
-    color: theme.colors.gray700,
+    fontFamily: theme.typography.fontFamily.label,
+    fontSize: theme.typography.fontSize.labelBold,
+    color: theme.colors.onSurfaceVariant,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontWeight: theme.typography.fontWeight.medium,
   },
 });

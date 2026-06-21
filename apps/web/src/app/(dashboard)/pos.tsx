@@ -1,13 +1,12 @@
 import { Body, Screen, theme, Title } from '@primitivo/ui';
 import { StyleSheet } from 'react-native';
 
-export default function ClientesScreen() {
+export default function PosScreen() {
   return (
     <Screen>
-      <Title>Clientes</Title>
+      <Title>POS</Title>
       <Body style={styles.p}>
-        Búsqueda por DNI, detalle del cliente, contador de infusiones e historial. (en
-        construcción)
+        Registro de pedido: selección de productos, beneficio aplicado y total. (en construcción)
       </Body>
     </Screen>
   );

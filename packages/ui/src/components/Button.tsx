@@ -3,11 +3,13 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
 import { theme } from '../theme';
+import { Icon, type IconName } from './Icon';
 
 type Variant = 'primary' | 'secondary';
 
@@ -18,10 +20,14 @@ type Props = {
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
+  icon?: IconName;
   style?: StyleProp<ViewStyle>;
 };
 
-/** Botón editorial: primario negro sólido, secundario contorno negro sobre blanco. */
+/**
+ * Botón Neo-Brutalista: borde negro recto + sombra "ink". Al presionar se "hunde"
+ * (se desplaza 4px y pierde la sombra). Primario negro sólido / secundario contorno.
+ */
 export function Button({
   title,
   onPress,
@@ -29,10 +35,12 @@ export function Button({
   loading = false,
   disabled = false,
   fullWidth = false,
+  icon,
   style,
 }: Props) {
   const isPrimary = variant === 'primary';
   const inactivo = disabled || loading;
+  const textColor = isPrimary ? theme.colors.white : theme.colors.black;
 
   return (
     <Pressable
@@ -43,17 +51,18 @@ export function Button({
         styles.base,
         isPrimary ? styles.primary : styles.secondary,
         fullWidth && styles.fullWidth,
+        pressed ? styles.pressed : theme.shadows.ink,
         inactivo && styles.disabled,
-        pressed && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? theme.colors.white : theme.colors.black} />
+        <ActivityIndicator color={textColor} />
       ) : (
-        <Text style={[styles.text, isPrimary ? styles.textPrimary : styles.textSecondary]}>
-          {title}
-        </Text>
+        <View style={styles.content}>
+          <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+          {icon ? <Icon name={icon} size={20} color={textColor} /> : null}
+        </View>
       )}
     </Pressable>
   );
@@ -64,7 +73,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.radii.md,
+    borderRadius: theme.radii.sharp,
+    borderWidth: 2,
+    borderColor: theme.colors.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -73,28 +84,27 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.black,
   },
   fullWidth: {
     alignSelf: 'stretch',
   },
+  pressed: {
+    transform: [{ translateX: 4 }, { translateY: 4 }],
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   disabled: {
     opacity: 0.5,
   },
-  pressed: {
-    opacity: 0.85,
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   text: {
     fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.fontSize.body,
+    fontSize: theme.typography.fontSize.bodyMd,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  textPrimary: {
-    color: theme.colors.white,
-  },
-  textSecondary: {
-    color: theme.colors.black,
   },
 });

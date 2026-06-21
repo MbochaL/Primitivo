@@ -34,7 +34,7 @@ export function Screen({ children, center = false, scroll = false, style }: Prop
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
   },
   content: {
     padding: theme.spacing.xl,
