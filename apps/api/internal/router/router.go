@@ -38,6 +38,7 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 	v1 := r.Group("/api/v1")
 	{
 		// ── Rutas públicas ──────────────────────────────────────────────
+		v1.GET("/health", h.Health.Check)
 		v1.POST("/auth/login", h.Auth.Login)
 		v1.POST("/auth/refresh", h.Auth.Refresh)
 
