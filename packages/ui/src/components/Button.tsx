@@ -11,7 +11,7 @@ import {
 import { theme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
-type Variant = 'primary' | 'secondary';
+type Variant = 'primary' | 'secondary' | 'danger';
 
 type Props = {
   title: string;
@@ -38,9 +38,8 @@ export function Button({
   icon,
   style,
 }: Props) {
-  const isPrimary = variant === 'primary';
   const inactivo = disabled || loading;
-  const textColor = isPrimary ? theme.colors.white : theme.colors.black;
+  const textColor = variant === 'secondary' ? theme.colors.black : theme.colors.white;
 
   return (
     <Pressable
@@ -49,7 +48,9 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        isPrimary ? styles.primary : styles.secondary,
+        variant === 'primary' && styles.primary,
+        variant === 'secondary' && styles.secondary,
+        variant === 'danger' && styles.danger,
         fullWidth && styles.fullWidth,
         pressed ? styles.pressed : theme.shadows.ink,
         inactivo && styles.disabled,
@@ -84,6 +85,9 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: theme.colors.white,
+  },
+  danger: {
+    backgroundColor: theme.colors.danger,
   },
   fullWidth: {
     alignSelf: 'stretch',

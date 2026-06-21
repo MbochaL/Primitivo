@@ -121,12 +121,19 @@ export const shadows = {
   },
 } as const;
 
+/** Breakpoints (px). mobile < tablet <= ancho < desktop <= desktop. */
+export const breakpoints = {
+  tablet: 768,
+  desktop: 1024,
+} as const;
+
 export const theme = {
   colors,
   spacing,
   radii,
   typography,
   shadows,
+  breakpoints,
 } as const;
 
 export type Theme = typeof theme;
