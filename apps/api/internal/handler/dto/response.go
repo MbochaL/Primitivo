@@ -143,6 +143,7 @@ func ToCompraResponseList(compras []domain.Compra) []CompraResponse {
 
 // BeneficioDisponibleResponse es una condición de beneficio para la vista del cliente.
 type BeneficioDisponibleResponse struct {
+	CondicionID      string `json:"condicion_id"`
 	BeneficioNombre  string `json:"beneficio_nombre"`
 	UmbralInfusiones int    `json:"umbral_infusiones"`
 	TipoDescuento    string `json:"tipo_descuento"`
@@ -156,6 +157,7 @@ func ToBeneficioDisponibleResponseList(bs []domain.BeneficioDisponible) []Benefi
 	out := make([]BeneficioDisponibleResponse, 0, len(bs))
 	for _, b := range bs {
 		out = append(out, BeneficioDisponibleResponse{
+			CondicionID:      b.CondicionID.String(),
 			BeneficioNombre:  b.BeneficioNombre,
 			UmbralInfusiones: b.UmbralInfusiones,
 			TipoDescuento:    b.TipoDescuento,
@@ -165,6 +167,69 @@ func ToBeneficioDisponibleResponseList(bs []domain.BeneficioDisponible) []Benefi
 		})
 	}
 	return out
+}
+
+// ── Menú ────────────────────────────────────────────────────────────────────
+
+// ProductoResponse es un ítem del menú.
+type ProductoResponse struct {
+	ID         string `json:"id"`
+	Nombre     string `json:"nombre"`
+	Precio     int    `json:"precio"`
+	EsInfusion bool   `json:"es_infusion"`
+}
+
+// CategoriaMenuResponse es una categoría del menú con sus productos.
+type CategoriaMenuResponse struct {
+	ID        string             `json:"id"`
+	Nombre    string             `json:"nombre"`
+	Seccion   string             `json:"seccion"`
+	Productos []ProductoResponse `json:"productos"`
+}
+
+// ToMenuResponse mapea el menú agrupado a su DTO.
+func ToMenuResponse(cats []domain.CategoriaConProductos) []CategoriaMenuResponse {
+	out := make([]CategoriaMenuResponse, 0, len(cats))
+	for _, c := range cats {
+		productos := make([]ProductoResponse, 0, len(c.Productos))
+		for _, p := range c.Productos {
+			productos = append(productos, ProductoResponse{
+				ID:         p.ID.String(),
+				Nombre:     p.Nombre,
+				Precio:     p.Precio,
+				EsInfusion: p.EsInfusion,
+			})
+		}
+		out = append(out, CategoriaMenuResponse{
+			ID:        c.ID.String(),
+			Nombre:    c.Nombre,
+			Seccion:   string(c.Seccion),
+			Productos: productos,
+		})
+	}
+	return out
+}
+
+// ── Compra registrada ───────────────────────────────────────────────────────
+
+// CompraRegistradaResponse es el resultado de registrar una venta.
+type CompraRegistradaResponse struct {
+	ID        string    `json:"id"`
+	Subtotal  int       `json:"subtotal"`
+	Descuento int       `json:"descuento"`
+	Total     int       `json:"total"`
+	Fecha     time.Time `json:"fecha"`
+}
+
+// ToCompraRegistradaResponse mapea la compra registrada a su DTO.
+func ToCompraRegistradaResponse(c domain.Compra) CompraRegistradaResponse {
+	return CompraRegistradaResponse{
+		ID:        c.ID.String(),
+		Subtotal:  c.Subtotal,
+		Descuento: c.Descuento,
+		Total:     c.Total,
+		Fecha:     c.Fecha,
+	}
 }
 
 func uuidPtrToString(id *uuid.UUID) *string {

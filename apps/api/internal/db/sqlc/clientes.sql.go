@@ -113,6 +113,22 @@ func (q *Queries) GetClientePorID(ctx context.Context, id uuid.UUID) (GetCliente
 	return i, err
 }
 
+const incrementarContadorInfusiones = `-- name: IncrementarContadorInfusiones :exec
+UPDATE clientes
+SET contador_infusiones = contador_infusiones + $2
+WHERE id = $1
+`
+
+type IncrementarContadorInfusionesParams struct {
+	ID                 uuid.UUID `json:"id"`
+	ContadorInfusiones int32     `json:"contador_infusiones"`
+}
+
+func (q *Queries) IncrementarContadorInfusiones(ctx context.Context, arg IncrementarContadorInfusionesParams) error {
+	_, err := q.db.Exec(ctx, incrementarContadorInfusiones, arg.ID, arg.ContadorInfusiones)
+	return err
+}
+
 const listClientes = `-- name: ListClientes :many
 SELECT c.id, c.dni, c.nombre, c.email, c.institucion_id, c.contador_infusiones, c.created_at, i.nombre AS institucion_nombre
 FROM clientes c
@@ -159,6 +175,17 @@ func (q *Queries) ListClientes(ctx context.Context) ([]ListClientesRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const reiniciarContadorInfusiones = `-- name: ReiniciarContadorInfusiones :exec
+UPDATE clientes
+SET contador_infusiones = 0
+WHERE id = $1
+`
+
+func (q *Queries) ReiniciarContadorInfusiones(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, reiniciarContadorInfusiones, id)
+	return err
 }
 
 const updateCliente = `-- name: UpdateCliente :one

@@ -16,3 +16,17 @@ type Compra struct {
 	Total     int
 	Fecha     time.Time
 }
+
+// ItemCompra es una línea solicitada al registrar una compra (qué producto y cuánto).
+type ItemCompra struct {
+	ProductoID uuid.UUID
+	Cantidad   int
+}
+
+// NuevaCompra son los datos de entrada para registrar una venta dentro de la transacción.
+type NuevaCompra struct {
+	ClienteID   uuid.UUID
+	UsuarioID   uuid.UUID
+	Items       []ItemCompra
+	CondicionID *uuid.UUID // beneficio a canjear (opcional)
+}

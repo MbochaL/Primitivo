@@ -11,8 +11,54 @@ import (
 	"github.com/google/uuid"
 )
 
+const getCondicionParaCanje = `-- name: GetCondicionParaCanje :one
+SELECT
+    c.id,
+    c.beneficio_id,
+    c.umbral_infusiones,
+    c.tipo_descuento,
+    c.valor_descuento,
+    c.reinicia_contador,
+    c.vigente,
+    b.institucion_id,
+    b.activo AS beneficio_activo
+FROM condiciones c
+JOIN beneficios b ON b.id = c.beneficio_id
+WHERE c.id = $1
+`
+
+type GetCondicionParaCanjeRow struct {
+	ID               uuid.UUID `json:"id"`
+	BeneficioID      uuid.UUID `json:"beneficio_id"`
+	UmbralInfusiones int32     `json:"umbral_infusiones"`
+	TipoDescuento    string    `json:"tipo_descuento"`
+	ValorDescuento   int32     `json:"valor_descuento"`
+	ReiniciaContador bool      `json:"reinicia_contador"`
+	Vigente          bool      `json:"vigente"`
+	InstitucionID    uuid.UUID `json:"institucion_id"`
+	BeneficioActivo  bool      `json:"beneficio_activo"`
+}
+
+func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error) {
+	row := q.db.QueryRow(ctx, getCondicionParaCanje, id)
+	var i GetCondicionParaCanjeRow
+	err := row.Scan(
+		&i.ID,
+		&i.BeneficioID,
+		&i.UmbralInfusiones,
+		&i.TipoDescuento,
+		&i.ValorDescuento,
+		&i.ReiniciaContador,
+		&i.Vigente,
+		&i.InstitucionID,
+		&i.BeneficioActivo,
+	)
+	return i, err
+}
+
 const listCondicionesPorInstitucion = `-- name: ListCondicionesPorInstitucion :many
 SELECT
+    c.id AS condicion_id,
     c.umbral_infusiones,
     c.tipo_descuento,
     c.valor_descuento,
@@ -27,11 +73,12 @@ ORDER BY c.umbral_infusiones ASC
 `
 
 type ListCondicionesPorInstitucionRow struct {
-	UmbralInfusiones int32  `json:"umbral_infusiones"`
-	TipoDescuento    string `json:"tipo_descuento"`
-	ValorDescuento   int32  `json:"valor_descuento"`
-	ReiniciaContador bool   `json:"reinicia_contador"`
-	BeneficioNombre  string `json:"beneficio_nombre"`
+	CondicionID      uuid.UUID `json:"condicion_id"`
+	UmbralInfusiones int32     `json:"umbral_infusiones"`
+	TipoDescuento    string    `json:"tipo_descuento"`
+	ValorDescuento   int32     `json:"valor_descuento"`
+	ReiniciaContador bool      `json:"reinicia_contador"`
+	BeneficioNombre  string    `json:"beneficio_nombre"`
 }
 
 func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error) {
@@ -44,6 +91,7 @@ func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucion
 	for rows.Next() {
 		var i ListCondicionesPorInstitucionRow
 		if err := rows.Scan(
+			&i.CondicionID,
 			&i.UmbralInfusiones,
 			&i.TipoDescuento,
 			&i.ValorDescuento,

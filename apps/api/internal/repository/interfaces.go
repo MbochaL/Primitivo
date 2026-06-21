@@ -39,3 +39,14 @@ type ClienteRepository interface {
 	Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error)
 	CondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]domain.BeneficioDisponible, error)
 }
+
+// MenuRepository abstrae la lectura del menú (categorías y productos).
+type MenuRepository interface {
+	ListCategorias(ctx context.Context) ([]domain.Categoria, error)
+	ListProductosActivos(ctx context.Context) ([]domain.Producto, error)
+}
+
+// CompraRepository registra ventas dentro de una transacción (el corazón del sistema).
+type CompraRepository interface {
+	RegistrarCompra(ctx context.Context, n domain.NuevaCompra) (domain.Compra, error)
+}

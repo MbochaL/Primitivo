@@ -360,6 +360,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/compras": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "compras"
+                ],
+                "summary": "Registrar una compra (calcula total y aplica beneficio si corresponde)",
+                "parameters": [
+                    {
+                        "description": "Pedido",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegistrarCompraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompraRegistradaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "produces": [
@@ -500,6 +550,33 @@ const docTemplate = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/menu": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Menú completo agrupado por categoría",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.CategoriaMenuResponse"
+                            }
                         }
                     }
                 }
@@ -757,6 +834,9 @@ const docTemplate = `{
                 "beneficio_nombre": {
                     "type": "string"
                 },
+                "condicion_id": {
+                    "type": "string"
+                },
                 "reinicia_contador": {
                     "type": "boolean"
                 },
@@ -768,6 +848,26 @@ const docTemplate = `{
                 },
                 "valor_descuento": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CategoriaMenuResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "productos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProductoResponse"
+                    }
+                },
+                "seccion": {
+                    "type": "string"
                 }
             }
         },
@@ -797,6 +897,26 @@ const docTemplate = `{
                 },
                 "nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.CompraRegistradaResponse": {
+            "type": "object",
+            "properties": {
+                "descuento": {
+                    "type": "integer"
+                },
+                "fecha": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "subtotal": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -893,6 +1013,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ItemCompraRequest": {
+            "type": "object",
+            "required": [
+                "cantidad",
+                "producto_id"
+            ],
+            "properties": {
+                "cantidad": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "producto_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -908,6 +1044,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ProductoResponse": {
+            "type": "object",
+            "properties": {
+                "es_infusion": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "precio": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.RefreshRequest": {
             "type": "object",
             "required": [
@@ -916,6 +1069,28 @@ const docTemplate = `{
             "properties": {
                 "refresh_token": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.RegistrarCompraRequest": {
+            "type": "object",
+            "required": [
+                "cliente_id",
+                "items"
+            ],
+            "properties": {
+                "cliente_id": {
+                    "type": "string"
+                },
+                "condicion_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.ItemCompraRequest"
+                    }
                 }
             }
         },

@@ -29,3 +29,13 @@ SET nombre = $2,
     institucion_id = $4
 WHERE id = $1
 RETURNING *;
+
+-- name: IncrementarContadorInfusiones :exec
+UPDATE clientes
+SET contador_infusiones = contador_infusiones + $2
+WHERE id = $1;
+
+-- name: ReiniciarContadorInfusiones :exec
+UPDATE clientes
+SET contador_infusiones = 0
+WHERE id = $1;

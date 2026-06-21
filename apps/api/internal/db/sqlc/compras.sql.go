@@ -11,6 +11,63 @@ import (
 	"github.com/google/uuid"
 )
 
+const createCompra = `-- name: CreateCompra :one
+INSERT INTO compras (cliente_id, usuario_id, subtotal, descuento, total)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, cliente_id, usuario_id, subtotal, descuento, total, fecha
+`
+
+type CreateCompraParams struct {
+	ClienteID uuid.UUID `json:"cliente_id"`
+	UsuarioID uuid.UUID `json:"usuario_id"`
+	Subtotal  int32     `json:"subtotal"`
+	Descuento int32     `json:"descuento"`
+	Total     int32     `json:"total"`
+}
+
+func (q *Queries) CreateCompra(ctx context.Context, arg CreateCompraParams) (Compra, error) {
+	row := q.db.QueryRow(ctx, createCompra,
+		arg.ClienteID,
+		arg.UsuarioID,
+		arg.Subtotal,
+		arg.Descuento,
+		arg.Total,
+	)
+	var i Compra
+	err := row.Scan(
+		&i.ID,
+		&i.ClienteID,
+		&i.UsuarioID,
+		&i.Subtotal,
+		&i.Descuento,
+		&i.Total,
+		&i.Fecha,
+	)
+	return i, err
+}
+
+const createDetalleCompra = `-- name: CreateDetalleCompra :exec
+INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_unitario)
+VALUES ($1, $2, $3, $4)
+`
+
+type CreateDetalleCompraParams struct {
+	CompraID       uuid.UUID `json:"compra_id"`
+	ProductoID     uuid.UUID `json:"producto_id"`
+	Cantidad       int32     `json:"cantidad"`
+	PrecioUnitario int32     `json:"precio_unitario"`
+}
+
+func (q *Queries) CreateDetalleCompra(ctx context.Context, arg CreateDetalleCompraParams) error {
+	_, err := q.db.Exec(ctx, createDetalleCompra,
+		arg.CompraID,
+		arg.ProductoID,
+		arg.Cantidad,
+		arg.PrecioUnitario,
+	)
+	return err
+}
+
 const listComprasPorCliente = `-- name: ListComprasPorCliente :many
 SELECT id, cliente_id, usuario_id, subtotal, descuento, total, fecha FROM compras
 WHERE cliente_id = $1

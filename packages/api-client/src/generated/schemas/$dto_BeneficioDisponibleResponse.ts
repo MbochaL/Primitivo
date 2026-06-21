@@ -10,6 +10,9 @@ export const $dto_BeneficioDisponibleResponse = {
         beneficio_nombre: {
             type: 'string',
         },
+        condicion_id: {
+            type: 'string',
+        },
         reinicia_contador: {
             type: 'boolean',
         },

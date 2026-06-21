@@ -11,19 +11,30 @@ import (
 )
 
 type Querier interface {
+	CreateCanje(ctx context.Context, arg CreateCanjeParams) (Canje, error)
+	CreateCategoria(ctx context.Context, arg CreateCategoriaParams) (Categoria, error)
 	CreateCliente(ctx context.Context, arg CreateClienteParams) (Cliente, error)
+	CreateCompra(ctx context.Context, arg CreateCompraParams) (Compra, error)
+	CreateDetalleCompra(ctx context.Context, arg CreateDetalleCompraParams) error
 	CreateInstitucion(ctx context.Context, nombre string) (Institucione, error)
+	CreateProducto(ctx context.Context, arg CreateProductoParams) (Producto, error)
 	CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (UsuariosSistema, error)
 	GetClientePorDNI(ctx context.Context, dni string) (GetClientePorDNIRow, error)
 	GetClientePorID(ctx context.Context, id uuid.UUID) (GetClientePorIDRow, error)
+	GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error)
 	GetInstitucionByID(ctx context.Context, id uuid.UUID) (Institucione, error)
+	GetProductoPorID(ctx context.Context, id uuid.UUID) (Producto, error)
 	GetUsuarioByEmail(ctx context.Context, email string) (UsuariosSistema, error)
 	GetUsuarioByID(ctx context.Context, id uuid.UUID) (UsuariosSistema, error)
+	IncrementarContadorInfusiones(ctx context.Context, arg IncrementarContadorInfusionesParams) error
+	ListCategorias(ctx context.Context) ([]Categoria, error)
 	ListClientes(ctx context.Context) ([]ListClientesRow, error)
 	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)
 	ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error)
 	ListInstituciones(ctx context.Context) ([]Institucione, error)
+	ListProductosActivos(ctx context.Context) ([]Producto, error)
 	ListUsuarios(ctx context.Context) ([]UsuariosSistema, error)
+	ReiniciarContadorInfusiones(ctx context.Context, id uuid.UUID) error
 	UpdateCliente(ctx context.Context, arg UpdateClienteParams) (Cliente, error)
 	UpdateInstitucion(ctx context.Context, arg UpdateInstitucionParams) (Institucione, error)
 	UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (UsuariosSistema, error)

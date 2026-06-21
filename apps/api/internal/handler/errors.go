@@ -54,10 +54,22 @@ func mapDomainError(err error) (int, string) {
 		return http.StatusNotFound, "usuario_no_encontrado"
 	case errors.Is(err, domain.ErrInstitucionNoEncontrada):
 		return http.StatusNotFound, "institucion_no_encontrada"
+	case errors.Is(err, domain.ErrClienteNoEncontrado):
+		return http.StatusNotFound, "cliente_no_encontrado"
+	case errors.Is(err, domain.ErrProductoNoEncontrado):
+		return http.StatusNotFound, "producto_no_encontrado"
 	case errors.Is(err, domain.ErrEmailYaRegistrado):
 		return http.StatusConflict, "email_ya_registrado"
+	case errors.Is(err, domain.ErrDNIYaRegistrado):
+		return http.StatusConflict, "dni_ya_registrado"
+	case errors.Is(err, domain.ErrBeneficioNoDisponible):
+		return http.StatusConflict, "beneficio_no_disponible"
+	case errors.Is(err, domain.ErrUmbralNoAlcanzado):
+		return http.StatusConflict, "umbral_no_alcanzado"
 	case errors.Is(err, domain.ErrRolInvalido):
 		return http.StatusBadRequest, "rol_invalido"
+	case errors.Is(err, domain.ErrCompraSinItems):
+		return http.StatusBadRequest, "compra_sin_items"
 	default:
 		return http.StatusInternalServerError, "error_interno"
 	}

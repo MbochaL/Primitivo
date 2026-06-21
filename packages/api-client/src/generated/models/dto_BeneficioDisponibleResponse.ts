@@ -5,6 +5,7 @@
 export type dto_BeneficioDisponibleResponse = {
     alcanzado?: boolean;
     beneficio_nombre?: string;
+    condicion_id?: string;
     reinicia_contador?: boolean;
     tipo_descuento?: string;
     umbral_infusiones?: number;

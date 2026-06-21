@@ -125,6 +125,7 @@ func (r *ClienteRepo) CondicionesPorInstitucion(ctx context.Context, institucion
 	out := make([]domain.BeneficioDisponible, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, domain.BeneficioDisponible{
+			CondicionID:      row.CondicionID,
 			BeneficioNombre:  row.BeneficioNombre,
 			UmbralInfusiones: int(row.UmbralInfusiones),
 			TipoDescuento:    row.TipoDescuento,

@@ -24,4 +24,5 @@ var (
 	ErrProductoNoEncontrado  = errors.New("producto no encontrado")
 	ErrBeneficioNoDisponible = errors.New("el beneficio no está disponible para el cliente")
 	ErrUmbralNoAlcanzado     = errors.New("el cliente no alcanzó el umbral de la condición")
+	ErrCompraSinItems        = errors.New("la compra no tiene items")
 )

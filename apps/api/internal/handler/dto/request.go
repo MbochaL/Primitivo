@@ -58,3 +58,16 @@ type ActualizarClienteRequest struct {
 	Email         *string `json:"email" binding:"omitempty,email"`
 	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
 }
+
+// ItemCompraRequest es una línea del pedido (producto + cantidad).
+type ItemCompraRequest struct {
+	ProductoID string `json:"producto_id" binding:"required,uuid"`
+	Cantidad   int    `json:"cantidad" binding:"required,min=1"`
+}
+
+// RegistrarCompraRequest es el cuerpo de POST /compras.
+type RegistrarCompraRequest struct {
+	ClienteID   string              `json:"cliente_id" binding:"required,uuid"`
+	Items       []ItemCompraRequest `json:"items" binding:"required,min=1,dive"`
+	CondicionID *string             `json:"condicion_id" binding:"omitempty,uuid"`
+}
