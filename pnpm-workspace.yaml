@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Expo / React Native necesitan un node_modules plano (hoisted) para que Metro
+# resuelva las dependencias nativas y transitivas (expo-modules-core, etc.).
+# En pnpm 10+ esta configuración vive acá, no en .npmrc.
+nodeLinker: hoisted
+shamefullyHoist: true
+autoInstallPeers: true
+strictPeerDependencies: false

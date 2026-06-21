@@ -1,0 +1,30 @@
+// Package repository define los contratos (interfaces) de acceso a datos que consumen
+// los services. La implementación concreta (Postgres) vive en el subpaquete postgres.
+package repository
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/martinbosch1996/primitivo/apps/api/internal/domain"
+)
+
+// UsuarioRepository abstrae la persistencia de los usuarios del sistema.
+// El service depende de esta interfaz, nunca de la implementación concreta.
+type UsuarioRepository interface {
+	Crear(ctx context.Context, u domain.Usuario) (domain.Usuario, error)
+	GetByID(ctx context.Context, id uuid.UUID) (domain.Usuario, error)
+	GetByEmail(ctx context.Context, email string) (domain.Usuario, error)
+	List(ctx context.Context) ([]domain.Usuario, error)
+	Actualizar(ctx context.Context, u domain.Usuario) (domain.Usuario, error)
+	ActualizarPassword(ctx context.Context, id uuid.UUID, passwordHash string) error
+}
+
+// InstitucionRepository abstrae la persistencia de las instituciones.
+type InstitucionRepository interface {
+	Crear(ctx context.Context, nombre string) (domain.Institucion, error)
+	GetByID(ctx context.Context, id uuid.UUID) (domain.Institucion, error)
+	List(ctx context.Context) ([]domain.Institucion, error)
+	Actualizar(ctx context.Context, i domain.Institucion) (domain.Institucion, error)
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@primitivo/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Backend Go (Gin + sqlc + pgx) de Primitivo. Workspace opaco: las dependencias se gestionan con go.mod.",
+  "scripts": {
+    "dev": "go run ./cmd/api",
+    "build": "go build -o bin/api ./cmd/api",
+    "lint": "go vet ./...",
+    "type-check": "go build ./...",
+    "gen:spec": "swag init -g cmd/api/main.go -o docs",
+    "sqlc": "sqlc generate",
+    "clean": "go clean"
+  }
+}

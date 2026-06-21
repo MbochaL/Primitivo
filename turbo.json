@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": [".env"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".expo/**", "web-build/**", "bin/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "gen:spec": {
+      "outputs": ["docs/**"]
+    },
+    "generate:client": {
+      "dependsOn": ["@primitivo/api#gen:spec"],
+      "outputs": ["src/generated/**"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

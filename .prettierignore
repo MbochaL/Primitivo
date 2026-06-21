@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+web-build/
+.expo/
+.turbo/
+**/generated/**
+apps/api/docs/
+apps/api/internal/db/sqlc/
+pnpm-lock.yaml

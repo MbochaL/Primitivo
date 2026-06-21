@@ -1,0 +1,30 @@
+# Configuración de sqlc para el backend de Primitivo (PostgreSQL + pgx/v5).
+# - schema: sqlc infiere el esquema desde las migraciones golang-migrate.
+#   Reconoce el naming {version}_{desc}.up/.down.sql y usa solo los .up.sql.
+# - queries: SQL escrito a mano que sqlc convierte en código Go type-safe.
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "db/migrations"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/db/sqlc" # generado, no editar a mano
+        sql_package: "pgx/v5"
+        emit_json_tags: true # tags json en los structs generados
+        emit_interface: true # genera una interfaz Querier (útil para mocks)
+        emit_empty_slices: true # las queries :many devuelven [] en vez de nil
+        overrides:
+          # Las columnas uuid se mapean a github.com/google/uuid.UUID (tipos Go limpios
+          # en domain/handlers, en vez de pgtype.UUID).
+          # IMPORTANTE: requiere registrar el codec en el pool pgx, p. ej.:
+          #   import pguuid "github.com/vgarvardt/pgx-google-uuid/v5"
+          #   cfg.AfterConnect = func(ctx, c) error { pguuid.Register(c.TypeMap()); return nil }
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/google/uuid"
+              type: "NullUUID"

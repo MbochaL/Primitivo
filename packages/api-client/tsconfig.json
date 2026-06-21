@@ -1,0 +1,7 @@
+{
+  "extends": "@primitivo/config/tsconfig/base.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": false
+  },
+  "include": ["src"]
+}
