@@ -20,7 +20,7 @@ interface AuthContextValue {
   estado: Estado;
   rol: Rol | null;
   esAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<Rol | null>;
   logout: () => Promise<void>;
 }
 
@@ -75,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await AsyncStorage.setItem(REFRESH_KEY, tokens.refresh_token);
       }
       aplicarToken(tokens.access_token);
+      return decodeRol(tokens.access_token);
     },
     [aplicarToken],
   );
