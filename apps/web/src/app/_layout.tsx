@@ -1,5 +1,4 @@
 import { setApiBaseUrl } from '@primitivo/api-client';
-import { theme } from '@primitivo/ui';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -11,7 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/lib/auth';
@@ -22,7 +20,10 @@ setApiBaseUrl(apiUrl);
 
 export default function RootLayout() {
   const [queryClient] = useState(() => new QueryClient());
-  const [fontsLoaded] = useFonts({
+
+  // Cargamos las fuentes pero NO bloqueamos el render: si alguna tarda o falla,
+  // la app igual se muestra usando la fuente del sistema y luego se aplica Oswald/Inter.
+  useFonts({
     Oswald_500Medium,
     Oswald_600SemiBold,
     Oswald_700Bold,
@@ -30,21 +31,6 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_700Bold,
   });
-
-  if (!fontsLoaded) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: theme.colors.white,
-        }}
-      >
-        <ActivityIndicator color={theme.colors.black} />
-      </View>
-    );
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
