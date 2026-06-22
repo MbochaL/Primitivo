@@ -22,17 +22,13 @@ export class InstitucionesService {
     }
     /**
      * Crear una institución
+     * @param requestBody Datos de la institución
      * @returns dto_InstitucionResponse Created
      * @throws ApiError
      */
-    public static postInstituciones({
-        requestBody,
-    }: {
-        /**
-         * Datos de la institución
-         */
+    public static postInstituciones(
         requestBody: dto_CrearInstitucionRequest,
-    }): CancelablePromise<dto_InstitucionResponse> {
+    ): CancelablePromise<dto_InstitucionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/instituciones',
@@ -45,22 +41,15 @@ export class InstitucionesService {
     }
     /**
      * Actualizar una institución
+     * @param id ID de la institución
+     * @param requestBody Datos a actualizar
      * @returns dto_InstitucionResponse OK
      * @throws ApiError
      */
-    public static putInstituciones({
-        id,
-        requestBody,
-    }: {
-        /**
-         * ID de la institución
-         */
+    public static putInstituciones(
         id: string,
-        /**
-         * Datos a actualizar
-         */
         requestBody: dto_ActualizarInstitucionRequest,
-    }): CancelablePromise<dto_InstitucionResponse> {
+    ): CancelablePromise<dto_InstitucionResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/instituciones/{id}',

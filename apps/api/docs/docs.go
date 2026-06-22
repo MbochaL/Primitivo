@@ -105,6 +105,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/categorias": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Lista todas las categorías (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.CategoriaAdminResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Crear categoría (admin)",
+                "parameters": [
+                    {
+                        "description": "Categoría",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CrearCategoriaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CategoriaAdminResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/categorias/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Actualizar categoría (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID categoría",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Categoría",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ActualizarCategoriaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CategoriaAdminResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/clientes": {
             "get": {
                 "security": [
@@ -568,7 +676,7 @@ const docTemplate = `{
                 "tags": [
                     "menu"
                 ],
-                "summary": "Menú completo agrupado por categoría",
+                "summary": "Menú completo agrupado por categoría (solo activos)",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -577,6 +685,145 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/dto.CategoriaMenuResponse"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/productos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Lista todos los productos incluyendo inactivos (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ProductoAdminResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Crear producto (admin)",
+                "parameters": [
+                    {
+                        "description": "Producto",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CrearProductoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductoAdminResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/productos/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Actualizar producto (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID producto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Producto",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ActualizarProductoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductoAdminResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Baja lógica de producto (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID producto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductoAdminResponse"
                         }
                     }
                 }
@@ -770,6 +1017,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ActualizarCategoriaRequest": {
+            "type": "object",
+            "required": [
+                "nombre",
+                "seccion"
+            ],
+            "properties": {
+                "nombre": {
+                    "type": "string"
+                },
+                "orden": {
+                    "type": "integer"
+                },
+                "seccion": {
+                    "type": "string",
+                    "enum": [
+                        "Cafetería",
+                        "Cocina de mediodía"
+                    ]
+                }
+            }
+        },
         "dto.ActualizarClienteRequest": {
             "type": "object",
             "required": [
@@ -799,6 +1068,34 @@ const docTemplate = `{
                 },
                 "nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ActualizarProductoRequest": {
+            "type": "object",
+            "required": [
+                "categoria_id",
+                "nombre"
+            ],
+            "properties": {
+                "activo": {
+                    "type": "boolean"
+                },
+                "categoria_id": {
+                    "type": "string"
+                },
+                "descripcion": {
+                    "type": "string"
+                },
+                "es_infusion": {
+                    "type": "boolean"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "precio": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -848,6 +1145,23 @@ const docTemplate = `{
                 },
                 "valor_descuento": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.CategoriaAdminResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "orden": {
+                    "type": "integer"
+                },
+                "seccion": {
+                    "type": "string"
                 }
             }
         },
@@ -940,6 +1254,28 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CrearCategoriaRequest": {
+            "type": "object",
+            "required": [
+                "nombre",
+                "seccion"
+            ],
+            "properties": {
+                "nombre": {
+                    "type": "string"
+                },
+                "orden": {
+                    "type": "integer"
+                },
+                "seccion": {
+                    "type": "string",
+                    "enum": [
+                        "Cafetería",
+                        "Cocina de mediodía"
+                    ]
+                }
+            }
+        },
         "dto.CrearClienteRequest": {
             "type": "object",
             "required": [
@@ -969,6 +1305,31 @@ const docTemplate = `{
             "properties": {
                 "nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.CrearProductoRequest": {
+            "type": "object",
+            "required": [
+                "categoria_id",
+                "nombre"
+            ],
+            "properties": {
+                "categoria_id": {
+                    "type": "string"
+                },
+                "descripcion": {
+                    "type": "string"
+                },
+                "es_infusion": {
+                    "type": "boolean"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "precio": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -1041,6 +1402,32 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ProductoAdminResponse": {
+            "type": "object",
+            "properties": {
+                "activo": {
+                    "type": "boolean"
+                },
+                "categoria_id": {
+                    "type": "string"
+                },
+                "descripcion": {
+                    "type": "string"
+                },
+                "es_infusion": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "precio": {
+                    "type": "integer"
                 }
             }
         },

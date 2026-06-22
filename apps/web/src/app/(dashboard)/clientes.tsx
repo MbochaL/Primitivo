@@ -52,7 +52,7 @@ export default function ClientesScreen() {
 
   const busqueda = useQuery({
     queryKey: ['clientes', 'dni', buscado],
-    queryFn: () => ClientesService.getClientes({ dni: buscado ?? undefined }),
+    queryFn: () => ClientesService.getClientes(buscado ?? undefined),
     enabled: !!buscado,
   });
 
@@ -138,12 +138,12 @@ function ClienteDetalle({
 
   const beneficios = useQuery({
     queryKey: ['cliente', id, 'beneficios'],
-    queryFn: () => ClientesService.getClientesBeneficios({ id }),
+    queryFn: () => ClientesService.getClientesBeneficios(id),
     enabled: !!id,
   });
   const historial = useQuery({
     queryKey: ['cliente', id, 'historial'],
-    queryFn: () => ClientesService.getClientesHistorial({ id }),
+    queryFn: () => ClientesService.getClientesHistorial(id),
     enabled: !!id,
   });
 
@@ -293,13 +293,17 @@ function ClienteFormModal({
     mutationFn: (data: ClienteForm) => {
       const email = data.email ? data.email : undefined;
       if (mode === 'editar' && cliente?.id) {
-        return ClientesService.putClientes({
-          id: cliente.id,
-          requestBody: { nombre: data.nombre, email, institucion_id: institucionId },
+        return ClientesService.putClientes(cliente.id, {
+          nombre: data.nombre,
+          email,
+          institucion_id: institucionId,
         });
       }
       return ClientesService.postClientes({
-        requestBody: { dni: data.dni, nombre: data.nombre, email, institucion_id: institucionId },
+        dni: data.dni,
+        nombre: data.nombre,
+        email,
+        institucion_id: institucionId,
       });
     },
     onSuccess: (c) => onSaved(c),

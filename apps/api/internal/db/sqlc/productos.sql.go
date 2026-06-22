@@ -12,14 +12,15 @@ import (
 )
 
 const createProducto = `-- name: CreateProducto :one
-INSERT INTO productos (categoria_id, nombre, precio, es_infusion)
-VALUES ($1, $2, $3, $4)
-RETURNING id, categoria_id, nombre, precio, es_infusion, activo
+INSERT INTO productos (categoria_id, nombre, descripcion, precio, es_infusion)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, categoria_id, nombre, precio, es_infusion, activo, descripcion
 `
 
 type CreateProductoParams struct {
 	CategoriaID uuid.UUID `json:"categoria_id"`
 	Nombre      string    `json:"nombre"`
+	Descripcion string    `json:"descripcion"`
 	Precio      int32     `json:"precio"`
 	EsInfusion  bool      `json:"es_infusion"`
 }
@@ -28,6 +29,7 @@ func (q *Queries) CreateProducto(ctx context.Context, arg CreateProductoParams) 
 	row := q.db.QueryRow(ctx, createProducto,
 		arg.CategoriaID,
 		arg.Nombre,
+		arg.Descripcion,
 		arg.Precio,
 		arg.EsInfusion,
 	)
@@ -39,12 +41,13 @@ func (q *Queries) CreateProducto(ctx context.Context, arg CreateProductoParams) 
 		&i.Precio,
 		&i.EsInfusion,
 		&i.Activo,
+		&i.Descripcion,
 	)
 	return i, err
 }
 
 const getProductoPorID = `-- name: GetProductoPorID :one
-SELECT id, categoria_id, nombre, precio, es_infusion, activo FROM productos
+SELECT id, categoria_id, nombre, precio, es_infusion, activo, descripcion FROM productos
 WHERE id = $1
 `
 
@@ -58,12 +61,46 @@ func (q *Queries) GetProductoPorID(ctx context.Context, id uuid.UUID) (Producto,
 		&i.Precio,
 		&i.EsInfusion,
 		&i.Activo,
+		&i.Descripcion,
 	)
 	return i, err
 }
 
+const listAllProductos = `-- name: ListAllProductos :many
+SELECT id, categoria_id, nombre, precio, es_infusion, activo, descripcion FROM productos
+ORDER BY nombre
+`
+
+func (q *Queries) ListAllProductos(ctx context.Context) ([]Producto, error) {
+	rows, err := q.db.Query(ctx, listAllProductos)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Producto{}
+	for rows.Next() {
+		var i Producto
+		if err := rows.Scan(
+			&i.ID,
+			&i.CategoriaID,
+			&i.Nombre,
+			&i.Precio,
+			&i.EsInfusion,
+			&i.Activo,
+			&i.Descripcion,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProductosActivos = `-- name: ListProductosActivos :many
-SELECT id, categoria_id, nombre, precio, es_infusion, activo FROM productos
+SELECT id, categoria_id, nombre, precio, es_infusion, activo, descripcion FROM productos
 WHERE activo = true
 ORDER BY nombre
 `
@@ -84,6 +121,7 @@ func (q *Queries) ListProductosActivos(ctx context.Context) ([]Producto, error) 
 			&i.Precio,
 			&i.EsInfusion,
 			&i.Activo,
+			&i.Descripcion,
 		); err != nil {
 			return nil, err
 		}
@@ -93,4 +131,68 @@ func (q *Queries) ListProductosActivos(ctx context.Context) ([]Producto, error) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const toggleProductoActivo = `-- name: ToggleProductoActivo :one
+UPDATE productos SET activo = $2 WHERE id = $1 RETURNING id, categoria_id, nombre, precio, es_infusion, activo, descripcion
+`
+
+type ToggleProductoActivoParams struct {
+	ID     uuid.UUID `json:"id"`
+	Activo bool      `json:"activo"`
+}
+
+func (q *Queries) ToggleProductoActivo(ctx context.Context, arg ToggleProductoActivoParams) (Producto, error) {
+	row := q.db.QueryRow(ctx, toggleProductoActivo, arg.ID, arg.Activo)
+	var i Producto
+	err := row.Scan(
+		&i.ID,
+		&i.CategoriaID,
+		&i.Nombre,
+		&i.Precio,
+		&i.EsInfusion,
+		&i.Activo,
+		&i.Descripcion,
+	)
+	return i, err
+}
+
+const updateProducto = `-- name: UpdateProducto :one
+UPDATE productos
+SET categoria_id = $2, nombre = $3, descripcion = $4, precio = $5, es_infusion = $6, activo = $7
+WHERE id = $1
+RETURNING id, categoria_id, nombre, precio, es_infusion, activo, descripcion
+`
+
+type UpdateProductoParams struct {
+	ID          uuid.UUID `json:"id"`
+	CategoriaID uuid.UUID `json:"categoria_id"`
+	Nombre      string    `json:"nombre"`
+	Descripcion string    `json:"descripcion"`
+	Precio      int32     `json:"precio"`
+	EsInfusion  bool      `json:"es_infusion"`
+	Activo      bool      `json:"activo"`
+}
+
+func (q *Queries) UpdateProducto(ctx context.Context, arg UpdateProductoParams) (Producto, error) {
+	row := q.db.QueryRow(ctx, updateProducto,
+		arg.ID,
+		arg.CategoriaID,
+		arg.Nombre,
+		arg.Descripcion,
+		arg.Precio,
+		arg.EsInfusion,
+		arg.Activo,
+	)
+	var i Producto
+	err := row.Scan(
+		&i.ID,
+		&i.CategoriaID,
+		&i.Nombre,
+		&i.Precio,
+		&i.EsInfusion,
+		&i.Activo,
+		&i.Descripcion,
+	)
+	return i, err
 }

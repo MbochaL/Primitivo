@@ -71,3 +71,38 @@ type RegistrarCompraRequest struct {
 	Items       []ItemCompraRequest `json:"items" binding:"required,min=1,dive"`
 	CondicionID *string             `json:"condicion_id" binding:"omitempty,uuid"`
 }
+
+// ── Menú admin ──────────────────────────────────────────────────────────────
+
+// CrearCategoriaRequest es el cuerpo de POST /categorias.
+type CrearCategoriaRequest struct {
+	Nombre  string `json:"nombre" binding:"required"`
+	Seccion string `json:"seccion" binding:"required,oneof=Cafetería 'Cocina de mediodía'"`
+	Orden   int    `json:"orden"`
+}
+
+// ActualizarCategoriaRequest es el cuerpo de PUT /categorias/:id.
+type ActualizarCategoriaRequest struct {
+	Nombre  string `json:"nombre" binding:"required"`
+	Seccion string `json:"seccion" binding:"required,oneof=Cafetería 'Cocina de mediodía'"`
+	Orden   int    `json:"orden"`
+}
+
+// CrearProductoRequest es el cuerpo de POST /productos.
+type CrearProductoRequest struct {
+	CategoriaID string `json:"categoria_id" binding:"required,uuid"`
+	Nombre      string `json:"nombre" binding:"required"`
+	Descripcion string `json:"descripcion"`
+	Precio      int    `json:"precio" binding:"min=0"`
+	EsInfusion  bool   `json:"es_infusion"`
+}
+
+// ActualizarProductoRequest es el cuerpo de PUT /productos/:id.
+type ActualizarProductoRequest struct {
+	CategoriaID string `json:"categoria_id" binding:"required,uuid"`
+	Nombre      string `json:"nombre" binding:"required"`
+	Descripcion string `json:"descripcion"`
+	Precio      int    `json:"precio" binding:"min=0"`
+	EsInfusion  bool   `json:"es_infusion"`
+	Activo      bool   `json:"activo"`
+}

@@ -24,6 +24,7 @@ type Producto struct {
 	ID          uuid.UUID
 	CategoriaID uuid.UUID
 	Nombre      string
+	Descripcion string
 	Precio      int
 	EsInfusion  bool
 	Activo      bool
@@ -33,4 +34,39 @@ type Producto struct {
 type CategoriaConProductos struct {
 	Categoria
 	Productos []Producto
+}
+
+// NuevoProducto es el input para crear un producto (admin).
+type NuevoProducto struct {
+	CategoriaID uuid.UUID
+	Nombre      string
+	Descripcion string
+	Precio      int
+	EsInfusion  bool
+}
+
+// ActualizarProductoInput es el input para editar un producto (admin).
+type ActualizarProductoInput struct {
+	ID          uuid.UUID
+	CategoriaID uuid.UUID
+	Nombre      string
+	Descripcion string
+	Precio      int
+	EsInfusion  bool
+	Activo      bool
+}
+
+// NuevaCategoria es el input para crear una categoría (admin).
+type NuevaCategoria struct {
+	Nombre  string
+	Seccion Seccion
+	Orden   int
+}
+
+// ActualizarCategoriaInput es el input para editar una categoría (admin).
+type ActualizarCategoriaInput struct {
+	ID      uuid.UUID
+	Nombre  string
+	Seccion Seccion
+	Orden   int
 }

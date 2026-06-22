@@ -40,10 +40,25 @@ type ClienteRepository interface {
 	CondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]domain.BeneficioDisponible, error)
 }
 
-// MenuRepository abstrae la lectura del menú (categorías y productos).
+// MenuRepository abstrae la lectura y escritura del menú (categorías y productos).
 type MenuRepository interface {
+	// Lectura (ambos roles)
 	ListCategorias(ctx context.Context) ([]domain.Categoria, error)
 	ListProductosActivos(ctx context.Context) ([]domain.Producto, error)
+
+	// Admin: listado completo (incluye inactivos)
+	ListAllProductos(ctx context.Context) ([]domain.Producto, error)
+
+	// Admin: CRUD categorías
+	GetCategoria(ctx context.Context, id uuid.UUID) (domain.Categoria, error)
+	CrearCategoria(ctx context.Context, n domain.NuevaCategoria) (domain.Categoria, error)
+	ActualizarCategoria(ctx context.Context, u domain.ActualizarCategoriaInput) (domain.Categoria, error)
+
+	// Admin: CRUD productos
+	GetProducto(ctx context.Context, id uuid.UUID) (domain.Producto, error)
+	CrearProducto(ctx context.Context, n domain.NuevoProducto) (domain.Producto, error)
+	ActualizarProducto(ctx context.Context, u domain.ActualizarProductoInput) (domain.Producto, error)
+	DesactivarProducto(ctx context.Context, id uuid.UUID) (domain.Producto, error)
 }
 
 // CompraRepository registra ventas dentro de una transacción (el corazón del sistema).

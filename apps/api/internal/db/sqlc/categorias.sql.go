@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createCategoria = `-- name: CreateCategoria :one
@@ -23,6 +25,22 @@ type CreateCategoriaParams struct {
 
 func (q *Queries) CreateCategoria(ctx context.Context, arg CreateCategoriaParams) (Categoria, error) {
 	row := q.db.QueryRow(ctx, createCategoria, arg.Nombre, arg.Seccion, arg.Orden)
+	var i Categoria
+	err := row.Scan(
+		&i.ID,
+		&i.Nombre,
+		&i.Seccion,
+		&i.Orden,
+	)
+	return i, err
+}
+
+const getCategoriaPorID = `-- name: GetCategoriaPorID :one
+SELECT id, nombre, seccion, orden FROM categorias WHERE id = $1
+`
+
+func (q *Queries) GetCategoriaPorID(ctx context.Context, id uuid.UUID) (Categoria, error) {
+	row := q.db.QueryRow(ctx, getCategoriaPorID, id)
 	var i Categoria
 	err := row.Scan(
 		&i.ID,
@@ -61,4 +79,35 @@ func (q *Queries) ListCategorias(ctx context.Context) ([]Categoria, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateCategoria = `-- name: UpdateCategoria :one
+UPDATE categorias
+SET nombre = $2, seccion = $3, orden = $4
+WHERE id = $1
+RETURNING id, nombre, seccion, orden
+`
+
+type UpdateCategoriaParams struct {
+	ID      uuid.UUID `json:"id"`
+	Nombre  string    `json:"nombre"`
+	Seccion string    `json:"seccion"`
+	Orden   int32     `json:"orden"`
+}
+
+func (q *Queries) UpdateCategoria(ctx context.Context, arg UpdateCategoriaParams) (Categoria, error) {
+	row := q.db.QueryRow(ctx, updateCategoria,
+		arg.ID,
+		arg.Nombre,
+		arg.Seccion,
+		arg.Orden,
+	)
+	var i Categoria
+	err := row.Scan(
+		&i.ID,
+		&i.Nombre,
+		&i.Seccion,
+		&i.Orden,
+	)
+	return i, err
 }

@@ -10,17 +10,13 @@ import { request as __request } from '../core/request';
 export class ComprasService {
     /**
      * Registrar una compra (calcula total y aplica beneficio si corresponde)
+     * @param requestBody Pedido
      * @returns dto_CompraRegistradaResponse Created
      * @throws ApiError
      */
-    public static postCompras({
-        requestBody,
-    }: {
-        /**
-         * Pedido
-         */
+    public static postCompras(
         requestBody: dto_RegistrarCompraRequest,
-    }): CancelablePromise<dto_CompraRegistradaResponse> {
+    ): CancelablePromise<dto_CompraRegistradaResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/compras',

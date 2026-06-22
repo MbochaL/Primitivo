@@ -1,0 +1,1 @@
+ALTER TABLE productos ADD COLUMN descripcion TEXT NOT NULL DEFAULT '';

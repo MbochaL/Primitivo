@@ -1,0 +1,1661 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "description": "API de fidelización y beneficios de Primitivo (pan · café · cocina).",
+        "title": "Primitivo API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Iniciar sesión",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.LoginRequest"
+                            }
+                        }
+                    },
+                    "description": "Credenciales",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.TokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Renovar tokens",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.RefreshRequest"
+                            }
+                        }
+                    },
+                    "description": "Refresh token",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.TokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categorias": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Lista todas las categorías (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.CategoriaAdminResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Crear categoría (admin)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearCategoriaRequest"
+                            }
+                        }
+                    },
+                    "description": "Categoría",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.CategoriaAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categorias/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Actualizar categoría (admin)",
+                "parameters": [
+                    {
+                        "description": "ID categoría",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarCategoriaRequest"
+                            }
+                        }
+                    },
+                    "description": "Categoría",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.CategoriaAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clientes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Listar clientes (o buscar por DNI con ?dni=)",
+                "parameters": [
+                    {
+                        "description": "Buscar por DNI exacto (búsqueda principal del dashboard)",
+                        "name": "dni",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.ClienteResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Registrar un cliente",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearClienteRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos del cliente",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ClienteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clientes/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Obtener un cliente por ID",
+                "parameters": [
+                    {
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ClienteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Actualizar un cliente",
+                "parameters": [
+                    {
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarClienteRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos a actualizar",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ClienteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clientes/{id}/beneficios": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Beneficios disponibles del cliente",
+                "parameters": [
+                    {
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.BeneficioDisponibleResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clientes/{id}/historial": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "clientes"
+                ],
+                "summary": "Historial de compras del cliente",
+                "parameters": [
+                    {
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.CompraResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/compras": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "compras"
+                ],
+                "summary": "Registrar una compra (calcula total y aplica beneficio si corresponde)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.RegistrarCompraRequest"
+                            }
+                        }
+                    },
+                    "description": "Pedido",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.CompraRegistradaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "health"
+                ],
+                "summary": "Healthcheck del servicio",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/handler.HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/instituciones": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "instituciones"
+                ],
+                "summary": "Listar instituciones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.InstitucionResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "instituciones"
+                ],
+                "summary": "Crear una institución",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearInstitucionRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos de la institución",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.InstitucionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/instituciones/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "instituciones"
+                ],
+                "summary": "Actualizar una institución",
+                "parameters": [
+                    {
+                        "description": "ID de la institución",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarInstitucionRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos a actualizar",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.InstitucionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/menu": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Menú completo agrupado por categoría (solo activos)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.CategoriaMenuResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/productos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Lista todos los productos incluyendo inactivos (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.ProductoAdminResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Crear producto (admin)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearProductoRequest"
+                            }
+                        }
+                    },
+                    "description": "Producto",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ProductoAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/productos/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Actualizar producto (admin)",
+                "parameters": [
+                    {
+                        "description": "ID producto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarProductoRequest"
+                            }
+                        }
+                    },
+                    "description": "Producto",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ProductoAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "menu"
+                ],
+                "summary": "Baja lógica de producto (admin)",
+                "parameters": [
+                    {
+                        "description": "ID producto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.ProductoAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/usuarios": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Listar usuarios del sistema",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.UsuarioResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Crear un usuario del sistema",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearUsuarioRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos del usuario",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/usuarios/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Actualizar un usuario del sistema",
+                "parameters": [
+                    {
+                        "description": "ID del usuario",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarUsuarioRequest"
+                            }
+                        }
+                    },
+                    "description": "Datos a actualizar",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/usuarios/{id}/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Resetear la contraseña de un usuario",
+                "parameters": [
+                    {
+                        "description": "ID del usuario",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ResetPasswordRequest"
+                            }
+                        }
+                    },
+                    "description": "Nueva contraseña",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "Sin contenido"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "//localhost:8080/api/v1"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header"
+            }
+        },
+        "schemas": {
+            "dto.ActualizarCategoriaRequest": {
+                "type": "object",
+                "required": [
+                    "nombre",
+                    "seccion"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "orden": {
+                        "type": "integer"
+                    },
+                    "seccion": {
+                        "type": "string",
+                        "enum": [
+                            "Cafetería",
+                            "Cocina de mediodía"
+                        ]
+                    }
+                }
+            },
+            "dto.ActualizarClienteRequest": {
+                "type": "object",
+                "required": [
+                    "nombre"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.ActualizarInstitucionRequest": {
+                "type": "object",
+                "required": [
+                    "activa",
+                    "nombre"
+                ],
+                "properties": {
+                    "activa": {
+                        "type": "boolean"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.ActualizarProductoRequest": {
+                "type": "object",
+                "required": [
+                    "categoria_id",
+                    "nombre"
+                ],
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "categoria_id": {
+                        "type": "string"
+                    },
+                    "descripcion": {
+                        "type": "string"
+                    },
+                    "es_infusion": {
+                        "type": "boolean"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "precio": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            },
+            "dto.ActualizarUsuarioRequest": {
+                "type": "object",
+                "required": [
+                    "activo",
+                    "email",
+                    "rol"
+                ],
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "rol": {
+                        "type": "string",
+                        "enum": [
+                            "administrador",
+                            "operador"
+                        ]
+                    }
+                }
+            },
+            "dto.BeneficioDisponibleResponse": {
+                "type": "object",
+                "properties": {
+                    "alcanzado": {
+                        "type": "boolean"
+                    },
+                    "beneficio_nombre": {
+                        "type": "string"
+                    },
+                    "condicion_id": {
+                        "type": "string"
+                    },
+                    "reinicia_contador": {
+                        "type": "boolean"
+                    },
+                    "tipo_descuento": {
+                        "type": "string"
+                    },
+                    "umbral_infusiones": {
+                        "type": "integer"
+                    },
+                    "valor_descuento": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "dto.CategoriaAdminResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "orden": {
+                        "type": "integer"
+                    },
+                    "seccion": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.CategoriaMenuResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "productos": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/dto.ProductoResponse"
+                        }
+                    },
+                    "seccion": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.ClienteResponse": {
+                "type": "object",
+                "properties": {
+                    "contador_infusiones": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "dni": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "institucion_nombre": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.CompraRegistradaResponse": {
+                "type": "object",
+                "properties": {
+                    "descuento": {
+                        "type": "integer"
+                    },
+                    "fecha": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "subtotal": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "dto.CompraResponse": {
+                "type": "object",
+                "properties": {
+                    "descuento": {
+                        "type": "integer"
+                    },
+                    "fecha": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "subtotal": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "dto.CrearCategoriaRequest": {
+                "type": "object",
+                "required": [
+                    "nombre",
+                    "seccion"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "orden": {
+                        "type": "integer"
+                    },
+                    "seccion": {
+                        "type": "string",
+                        "enum": [
+                            "Cafetería",
+                            "Cocina de mediodía"
+                        ]
+                    }
+                }
+            },
+            "dto.CrearClienteRequest": {
+                "type": "object",
+                "required": [
+                    "dni",
+                    "nombre"
+                ],
+                "properties": {
+                    "dni": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.CrearInstitucionRequest": {
+                "type": "object",
+                "required": [
+                    "nombre"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.CrearProductoRequest": {
+                "type": "object",
+                "required": [
+                    "categoria_id",
+                    "nombre"
+                ],
+                "properties": {
+                    "categoria_id": {
+                        "type": "string"
+                    },
+                    "descripcion": {
+                        "type": "string"
+                    },
+                    "es_infusion": {
+                        "type": "boolean"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "precio": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            },
+            "dto.CrearUsuarioRequest": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password",
+                    "rol"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 8
+                    },
+                    "rol": {
+                        "type": "string",
+                        "enum": [
+                            "administrador",
+                            "operador"
+                        ]
+                    }
+                }
+            },
+            "dto.InstitucionResponse": {
+                "type": "object",
+                "properties": {
+                    "activa": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.ItemCompraRequest": {
+                "type": "object",
+                "required": [
+                    "cantidad",
+                    "producto_id"
+                ],
+                "properties": {
+                    "cantidad": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "producto_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.LoginRequest": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.ProductoAdminResponse": {
+                "type": "object",
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "categoria_id": {
+                        "type": "string"
+                    },
+                    "descripcion": {
+                        "type": "string"
+                    },
+                    "es_infusion": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "precio": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "dto.ProductoResponse": {
+                "type": "object",
+                "properties": {
+                    "es_infusion": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    },
+                    "precio": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "dto.RefreshRequest": {
+                "type": "object",
+                "required": [
+                    "refresh_token"
+                ],
+                "properties": {
+                    "refresh_token": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.RegistrarCompraRequest": {
+                "type": "object",
+                "required": [
+                    "cliente_id",
+                    "items"
+                ],
+                "properties": {
+                    "cliente_id": {
+                        "type": "string"
+                    },
+                    "condicion_id": {
+                        "type": "string"
+                    },
+                    "items": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "$ref": "#/components/schemas/dto.ItemCompraRequest"
+                        }
+                    }
+                }
+            },
+            "dto.ResetPasswordRequest": {
+                "type": "object",
+                "required": [
+                    "password"
+                ],
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "minLength": 8
+                    }
+                }
+            },
+            "dto.TokenResponse": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "refresh_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string"
+                    }
+                }
+            },
+            "dto.UsuarioResponse": {
+                "type": "object",
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "rol": {
+                        "type": "string"
+                    }
+                }
+            },
+            "handler.HealthResponse": {
+                "type": "object",
+                "properties": {
+                    "db": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                }
+            },
+            "response.ErrorBody": {
+                "type": "object",
+                "properties": {
+                    "codigo": {
+                        "type": "string"
+                    },
+                    "mensaje": {
+                        "type": "string"
+                    }
+                }
+            },
+            "response.ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "$ref": "#/components/schemas/response.ErrorBody"
+                    }
+                }
+            }
+        }
+    }
+}

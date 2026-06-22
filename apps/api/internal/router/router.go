@@ -77,6 +77,16 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 				// Instituciones (escritura)
 				admin.POST("/instituciones", h.Institucion.Crear)
 				admin.PUT("/instituciones/:id", h.Institucion.Actualizar)
+
+				// Menú — gestión admin
+				admin.GET("/categorias", h.Menu.ListCategorias)
+				admin.POST("/categorias", h.Menu.CrearCategoria)
+				admin.PUT("/categorias/:id", h.Menu.ActualizarCategoria)
+
+				admin.GET("/productos", h.Menu.ListProductos)
+				admin.POST("/productos", h.Menu.CrearProducto)
+				admin.PUT("/productos/:id", h.Menu.ActualizarProducto)
+				admin.DELETE("/productos/:id", h.Menu.DesactivarProducto)
 			}
 		}
 	}

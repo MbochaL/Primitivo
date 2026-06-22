@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const tokens = await AuthService.postAuthLogin({ requestBody: { email, password } });
+      const tokens = await AuthService.postAuthLogin({ email, password });
       if (!tokens.access_token) {
         throw new Error('Respuesta de login inválida');
       }

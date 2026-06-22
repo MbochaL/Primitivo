@@ -210,6 +210,68 @@ func ToMenuResponse(cats []domain.CategoriaConProductos) []CategoriaMenuResponse
 	return out
 }
 
+// ── Menú admin ──────────────────────────────────────────────────────────────
+
+// CategoriaAdminResponse expone todos los campos de una categoría (admin).
+type CategoriaAdminResponse struct {
+	ID      string `json:"id"`
+	Nombre  string `json:"nombre"`
+	Seccion string `json:"seccion"`
+	Orden   int    `json:"orden"`
+}
+
+// ToCategoriaAdminResponse mapea una categoría a su DTO admin.
+func ToCategoriaAdminResponse(c domain.Categoria) CategoriaAdminResponse {
+	return CategoriaAdminResponse{
+		ID:      c.ID.String(),
+		Nombre:  c.Nombre,
+		Seccion: string(c.Seccion),
+		Orden:   c.Orden,
+	}
+}
+
+// ToCategoriasAdminResponse mapea un slice de categorías.
+func ToCategoriasAdminResponse(cats []domain.Categoria) []CategoriaAdminResponse {
+	out := make([]CategoriaAdminResponse, 0, len(cats))
+	for _, c := range cats {
+		out = append(out, ToCategoriaAdminResponse(c))
+	}
+	return out
+}
+
+// ProductoAdminResponse expone todos los campos de un producto (admin).
+type ProductoAdminResponse struct {
+	ID          string `json:"id"`
+	CategoriaID string `json:"categoria_id"`
+	Nombre      string `json:"nombre"`
+	Descripcion string `json:"descripcion"`
+	Precio      int    `json:"precio"`
+	EsInfusion  bool   `json:"es_infusion"`
+	Activo      bool   `json:"activo"`
+}
+
+// ToProductoAdminResponse mapea un producto a su DTO admin.
+func ToProductoAdminResponse(p domain.Producto) ProductoAdminResponse {
+	return ProductoAdminResponse{
+		ID:          p.ID.String(),
+		CategoriaID: p.CategoriaID.String(),
+		Nombre:      p.Nombre,
+		Descripcion: p.Descripcion,
+		Precio:      p.Precio,
+		EsInfusion:  p.EsInfusion,
+		Activo:      p.Activo,
+	}
+}
+
+// ToProductosAdminResponse mapea un slice de productos.
+func ToProductosAdminResponse(prods []domain.Producto) []ProductoAdminResponse {
+	out := make([]ProductoAdminResponse, 0, len(prods))
+	for _, p := range prods {
+		out = append(out, ToProductoAdminResponse(p))
+	}
+	return out
+}
+
 // ── Compra registrada ───────────────────────────────────────────────────────
 
 // CompraRegistradaResponse es el resultado de registrar una venta.

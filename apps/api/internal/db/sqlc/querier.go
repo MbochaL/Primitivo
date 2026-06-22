@@ -19,6 +19,7 @@ type Querier interface {
 	CreateInstitucion(ctx context.Context, nombre string) (Institucione, error)
 	CreateProducto(ctx context.Context, arg CreateProductoParams) (Producto, error)
 	CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (UsuariosSistema, error)
+	GetCategoriaPorID(ctx context.Context, id uuid.UUID) (Categoria, error)
 	GetClientePorDNI(ctx context.Context, dni string) (GetClientePorDNIRow, error)
 	GetClientePorID(ctx context.Context, id uuid.UUID) (GetClientePorIDRow, error)
 	GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error)
@@ -27,6 +28,7 @@ type Querier interface {
 	GetUsuarioByEmail(ctx context.Context, email string) (UsuariosSistema, error)
 	GetUsuarioByID(ctx context.Context, id uuid.UUID) (UsuariosSistema, error)
 	IncrementarContadorInfusiones(ctx context.Context, arg IncrementarContadorInfusionesParams) error
+	ListAllProductos(ctx context.Context) ([]Producto, error)
 	ListCategorias(ctx context.Context) ([]Categoria, error)
 	ListClientes(ctx context.Context) ([]ListClientesRow, error)
 	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)
@@ -35,8 +37,11 @@ type Querier interface {
 	ListProductosActivos(ctx context.Context) ([]Producto, error)
 	ListUsuarios(ctx context.Context) ([]UsuariosSistema, error)
 	ReiniciarContadorInfusiones(ctx context.Context, id uuid.UUID) error
+	ToggleProductoActivo(ctx context.Context, arg ToggleProductoActivoParams) (Producto, error)
+	UpdateCategoria(ctx context.Context, arg UpdateCategoriaParams) (Categoria, error)
 	UpdateCliente(ctx context.Context, arg UpdateClienteParams) (Cliente, error)
 	UpdateInstitucion(ctx context.Context, arg UpdateInstitucionParams) (Institucione, error)
+	UpdateProducto(ctx context.Context, arg UpdateProductoParams) (Producto, error)
 	UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (UsuariosSistema, error)
 	UpdateUsuarioPassword(ctx context.Context, arg UpdateUsuarioPasswordParams) error
 }

@@ -1,5 +1,20 @@
 basePath: /api/v1
 definitions:
+  dto.ActualizarCategoriaRequest:
+    properties:
+      nombre:
+        type: string
+      orden:
+        type: integer
+      seccion:
+        enum:
+        - Cafetería
+        - Cocina de mediodía
+        type: string
+    required:
+    - nombre
+    - seccion
+    type: object
   dto.ActualizarClienteRequest:
     properties:
       email:
@@ -19,6 +34,25 @@ definitions:
         type: string
     required:
     - activa
+    - nombre
+    type: object
+  dto.ActualizarProductoRequest:
+    properties:
+      activo:
+        type: boolean
+      categoria_id:
+        type: string
+      descripcion:
+        type: string
+      es_infusion:
+        type: boolean
+      nombre:
+        type: string
+      precio:
+        minimum: 0
+        type: integer
+    required:
+    - categoria_id
     - nombre
     type: object
   dto.ActualizarUsuarioRequest:
@@ -53,6 +87,17 @@ definitions:
         type: integer
       valor_descuento:
         type: integer
+    type: object
+  dto.CategoriaAdminResponse:
+    properties:
+      id:
+        type: string
+      nombre:
+        type: string
+      orden:
+        type: integer
+      seccion:
+        type: string
     type: object
   dto.CategoriaMenuResponse:
     properties:
@@ -112,6 +157,21 @@ definitions:
       total:
         type: integer
     type: object
+  dto.CrearCategoriaRequest:
+    properties:
+      nombre:
+        type: string
+      orden:
+        type: integer
+      seccion:
+        enum:
+        - Cafetería
+        - Cocina de mediodía
+        type: string
+    required:
+    - nombre
+    - seccion
+    type: object
   dto.CrearClienteRequest:
     properties:
       dni:
@@ -131,6 +191,23 @@ definitions:
       nombre:
         type: string
     required:
+    - nombre
+    type: object
+  dto.CrearProductoRequest:
+    properties:
+      categoria_id:
+        type: string
+      descripcion:
+        type: string
+      es_infusion:
+        type: boolean
+      nombre:
+        type: string
+      precio:
+        minimum: 0
+        type: integer
+    required:
+    - categoria_id
     - nombre
     type: object
   dto.CrearUsuarioRequest:
@@ -181,6 +258,23 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.ProductoAdminResponse:
+    properties:
+      activo:
+        type: boolean
+      categoria_id:
+        type: string
+      descripcion:
+        type: string
+      es_infusion:
+        type: boolean
+      id:
+        type: string
+      nombre:
+        type: string
+      precio:
+        type: integer
     type: object
   dto.ProductoResponse:
     properties:
@@ -327,6 +421,72 @@ paths:
       summary: Renovar tokens
       tags:
       - auth
+  /categorias:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CategoriaAdminResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Lista todas las categorías (admin)
+      tags:
+      - menu
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Categoría
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrearCategoriaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CategoriaAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Crear categoría (admin)
+      tags:
+      - menu
+  /categorias/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID categoría
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Categoría
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActualizarCategoriaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CategoriaAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar categoría (admin)
+      tags:
+      - menu
   /clientes:
     get:
       parameters:
@@ -619,7 +779,92 @@ paths:
             type: array
       security:
       - BearerAuth: []
-      summary: Menú completo agrupado por categoría
+      summary: Menú completo agrupado por categoría (solo activos)
+      tags:
+      - menu
+  /productos:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ProductoAdminResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Lista todos los productos incluyendo inactivos (admin)
+      tags:
+      - menu
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Producto
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrearProductoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ProductoAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Crear producto (admin)
+      tags:
+      - menu
+  /productos/{id}:
+    delete:
+      parameters:
+      - description: ID producto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProductoAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Baja lógica de producto (admin)
+      tags:
+      - menu
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID producto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Producto
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActualizarProductoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProductoAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar producto (admin)
       tags:
       - menu
   /usuarios:

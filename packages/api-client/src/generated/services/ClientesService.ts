@@ -13,17 +13,13 @@ import { request as __request } from '../core/request';
 export class ClientesService {
     /**
      * Listar clientes (o buscar por DNI con ?dni=)
+     * @param dni Buscar por DNI exacto (búsqueda principal del dashboard)
      * @returns dto_ClienteResponse OK
      * @throws ApiError
      */
-    public static getClientes({
-        dni,
-    }: {
-        /**
-         * Buscar por DNI exacto (búsqueda principal del dashboard)
-         */
+    public static getClientes(
         dni?: string,
-    }): CancelablePromise<Array<dto_ClienteResponse>> {
+    ): CancelablePromise<Array<dto_ClienteResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/clientes',
@@ -34,17 +30,13 @@ export class ClientesService {
     }
     /**
      * Registrar un cliente
+     * @param requestBody Datos del cliente
      * @returns dto_ClienteResponse Created
      * @throws ApiError
      */
-    public static postClientes({
-        requestBody,
-    }: {
-        /**
-         * Datos del cliente
-         */
+    public static postClientes(
         requestBody: dto_CrearClienteRequest,
-    }): CancelablePromise<dto_ClienteResponse> {
+    ): CancelablePromise<dto_ClienteResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/clientes',
@@ -58,17 +50,13 @@ export class ClientesService {
     }
     /**
      * Obtener un cliente por ID
+     * @param id ID del cliente
      * @returns dto_ClienteResponse OK
      * @throws ApiError
      */
-    public static getClientes1({
-        id,
-    }: {
-        /**
-         * ID del cliente
-         */
+    public static getClientes1(
         id: string,
-    }): CancelablePromise<dto_ClienteResponse> {
+    ): CancelablePromise<dto_ClienteResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/clientes/{id}',
@@ -82,22 +70,15 @@ export class ClientesService {
     }
     /**
      * Actualizar un cliente
+     * @param id ID del cliente
+     * @param requestBody Datos a actualizar
      * @returns dto_ClienteResponse OK
      * @throws ApiError
      */
-    public static putClientes({
-        id,
-        requestBody,
-    }: {
-        /**
-         * ID del cliente
-         */
+    public static putClientes(
         id: string,
-        /**
-         * Datos a actualizar
-         */
         requestBody: dto_ActualizarClienteRequest,
-    }): CancelablePromise<dto_ClienteResponse> {
+    ): CancelablePromise<dto_ClienteResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/clientes/{id}',
@@ -113,17 +94,13 @@ export class ClientesService {
     }
     /**
      * Beneficios disponibles del cliente
+     * @param id ID del cliente
      * @returns dto_BeneficioDisponibleResponse OK
      * @throws ApiError
      */
-    public static getClientesBeneficios({
-        id,
-    }: {
-        /**
-         * ID del cliente
-         */
+    public static getClientesBeneficios(
         id: string,
-    }): CancelablePromise<Array<dto_BeneficioDisponibleResponse>> {
+    ): CancelablePromise<Array<dto_BeneficioDisponibleResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/clientes/{id}/beneficios',
@@ -137,17 +114,13 @@ export class ClientesService {
     }
     /**
      * Historial de compras del cliente
+     * @param id ID del cliente
      * @returns dto_CompraResponse OK
      * @throws ApiError
      */
-    public static getClientesHistorial({
-        id,
-    }: {
-        /**
-         * ID del cliente
-         */
+    public static getClientesHistorial(
         id: string,
-    }): CancelablePromise<Array<dto_CompraResponse>> {
+    ): CancelablePromise<Array<dto_CompraResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/clientes/{id}/historial',

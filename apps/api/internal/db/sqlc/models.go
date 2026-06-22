@@ -86,6 +86,7 @@ type Producto struct {
 	Precio      int32     `json:"precio"`
 	EsInfusion  bool      `json:"es_infusion"`
 	Activo      bool      `json:"activo"`
+	Descripcion string    `json:"descripcion"`
 }
 
 type UsuariosSistema struct {

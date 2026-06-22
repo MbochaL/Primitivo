@@ -11,17 +11,13 @@ import { request as __request } from '../core/request';
 export class AuthService {
     /**
      * Iniciar sesión
+     * @param requestBody Credenciales
      * @returns dto_TokenResponse OK
      * @throws ApiError
      */
-    public static postAuthLogin({
-        requestBody,
-    }: {
-        /**
-         * Credenciales
-         */
+    public static postAuthLogin(
         requestBody: dto_LoginRequest,
-    }): CancelablePromise<dto_TokenResponse> {
+    ): CancelablePromise<dto_TokenResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/auth/login',
@@ -35,17 +31,13 @@ export class AuthService {
     }
     /**
      * Renovar tokens
+     * @param requestBody Refresh token
      * @returns dto_TokenResponse OK
      * @throws ApiError
      */
-    public static postAuthRefresh({
-        requestBody,
-    }: {
-        /**
-         * Refresh token
-         */
+    public static postAuthRefresh(
         requestBody: dto_RefreshRequest,
-    }): CancelablePromise<dto_TokenResponse> {
+    ): CancelablePromise<dto_TokenResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/auth/refresh',

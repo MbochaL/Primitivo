@@ -23,17 +23,13 @@ export class UsuariosService {
     }
     /**
      * Crear un usuario del sistema
+     * @param requestBody Datos del usuario
      * @returns dto_UsuarioResponse Created
      * @throws ApiError
      */
-    public static postUsuarios({
-        requestBody,
-    }: {
-        /**
-         * Datos del usuario
-         */
+    public static postUsuarios(
         requestBody: dto_CrearUsuarioRequest,
-    }): CancelablePromise<dto_UsuarioResponse> {
+    ): CancelablePromise<dto_UsuarioResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/usuarios',
@@ -47,22 +43,15 @@ export class UsuariosService {
     }
     /**
      * Actualizar un usuario del sistema
+     * @param id ID del usuario
+     * @param requestBody Datos a actualizar
      * @returns dto_UsuarioResponse OK
      * @throws ApiError
      */
-    public static putUsuarios({
-        id,
-        requestBody,
-    }: {
-        /**
-         * ID del usuario
-         */
+    public static putUsuarios(
         id: string,
-        /**
-         * Datos a actualizar
-         */
         requestBody: dto_ActualizarUsuarioRequest,
-    }): CancelablePromise<dto_UsuarioResponse> {
+    ): CancelablePromise<dto_UsuarioResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/usuarios/{id}',
@@ -79,22 +68,15 @@ export class UsuariosService {
     }
     /**
      * Resetear la contraseña de un usuario
+     * @param id ID del usuario
+     * @param requestBody Nueva contraseña
      * @returns void
      * @throws ApiError
      */
-    public static putUsuariosPassword({
-        id,
-        requestBody,
-    }: {
-        /**
-         * ID del usuario
-         */
+    public static putUsuariosPassword(
         id: string,
-        /**
-         * Nueva contraseña
-         */
         requestBody: dto_ResetPasswordRequest,
-    }): CancelablePromise<void> {
+    ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/usuarios/{id}/password',

@@ -9,7 +9,7 @@ import (
 	"github.com/martinbosch1996/primitivo/apps/api/internal/repository"
 )
 
-// MenuService arma el menú completo agrupado por categoría.
+// MenuService arma el menú completo agrupado por categoría y expone el CRUD admin.
 type MenuService struct {
 	menu repository.MenuRepository
 }
@@ -43,4 +43,39 @@ func (s *MenuService) GetMenu(ctx context.Context) ([]domain.CategoriaConProduct
 		})
 	}
 	return out, nil
+}
+
+// ListCategorias devuelve todas las categorías (admin).
+func (s *MenuService) ListCategorias(ctx context.Context) ([]domain.Categoria, error) {
+	return s.menu.ListCategorias(ctx)
+}
+
+// CrearCategoria crea una categoría nueva (admin).
+func (s *MenuService) CrearCategoria(ctx context.Context, n domain.NuevaCategoria) (domain.Categoria, error) {
+	return s.menu.CrearCategoria(ctx, n)
+}
+
+// ActualizarCategoria edita una categoría existente (admin).
+func (s *MenuService) ActualizarCategoria(ctx context.Context, u domain.ActualizarCategoriaInput) (domain.Categoria, error) {
+	return s.menu.ActualizarCategoria(ctx, u)
+}
+
+// ListAllProductos devuelve todos los productos incluyendo inactivos (admin).
+func (s *MenuService) ListAllProductos(ctx context.Context) ([]domain.Producto, error) {
+	return s.menu.ListAllProductos(ctx)
+}
+
+// CrearProducto crea un producto nuevo (admin).
+func (s *MenuService) CrearProducto(ctx context.Context, n domain.NuevoProducto) (domain.Producto, error) {
+	return s.menu.CrearProducto(ctx, n)
+}
+
+// ActualizarProducto edita un producto existente (admin).
+func (s *MenuService) ActualizarProducto(ctx context.Context, u domain.ActualizarProductoInput) (domain.Producto, error) {
+	return s.menu.ActualizarProducto(ctx, u)
+}
+
+// DesactivarProducto hace baja lógica de un producto (admin).
+func (s *MenuService) DesactivarProducto(ctx context.Context, id uuid.UUID) (domain.Producto, error) {
+	return s.menu.DesactivarProducto(ctx, id)
 }

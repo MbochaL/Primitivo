@@ -48,14 +48,14 @@ export default function ComprasScreen() {
 
   const clienteQ = useQuery({
     queryKey: ['clientes', 'dni', buscado],
-    queryFn: () => ClientesService.getClientes({ dni: buscado ?? undefined }),
+    queryFn: () => ClientesService.getClientes(buscado ?? undefined),
     enabled: !!buscado,
   });
   const cliente = clienteQ.data?.[0];
 
   const beneficiosQ = useQuery({
     queryKey: ['cliente', cliente?.id, 'beneficios'],
-    queryFn: () => ClientesService.getClientesBeneficios({ id: cliente?.id ?? '' }),
+    queryFn: () => ClientesService.getClientesBeneficios(cliente?.id ?? ''),
     enabled: !!cliente?.id,
   });
   const beneficiosAlcanzados = (beneficiosQ.data ?? []).filter((b) => b.alcanzado);
@@ -93,11 +93,9 @@ export default function ComprasScreen() {
   const confirmar = useMutation({
     mutationFn: () =>
       ComprasService.postCompras({
-        requestBody: {
-          cliente_id: cliente?.id ?? '',
-          items: lineas.map((l) => ({ producto_id: l.producto.id ?? '', cantidad: l.cantidad })),
-          condicion_id: condicionID ?? undefined,
-        },
+        cliente_id: cliente?.id ?? '',
+        items: lineas.map((l) => ({ producto_id: l.producto.id ?? '', cantidad: l.cantidad })),
+        condicion_id: condicionID ?? undefined,
       }),
     onSuccess: (res) => {
       toast.success(`Compra registrada · ${moneda(res.total ?? 0)}`);

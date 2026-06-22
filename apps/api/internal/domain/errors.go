@@ -19,10 +19,11 @@ var (
 	ErrInstitucionNoEncontrada = errors.New("institución no encontrada")
 
 	// Clientes / menú / beneficios
-	ErrClienteNoEncontrado   = errors.New("cliente no encontrado")
-	ErrDNIYaRegistrado       = errors.New("ya existe un cliente con ese DNI")
-	ErrProductoNoEncontrado  = errors.New("producto no encontrado")
-	ErrBeneficioNoDisponible = errors.New("el beneficio no está disponible para el cliente")
-	ErrUmbralNoAlcanzado     = errors.New("el cliente no alcanzó el umbral de la condición")
-	ErrCompraSinItems        = errors.New("la compra no tiene items")
+	ErrClienteNoEncontrado    = errors.New("cliente no encontrado")
+	ErrDNIYaRegistrado        = errors.New("ya existe un cliente con ese DNI")
+	ErrProductoNoEncontrado   = errors.New("producto no encontrado")
+	ErrCategoriaNoEncontrada  = errors.New("categoría no encontrada")
+	ErrBeneficioNoDisponible  = errors.New("el beneficio no está disponible para el cliente")
+	ErrUmbralNoAlcanzado      = errors.New("el cliente no alcanzó el umbral de la condición")
+	ErrCompraSinItems         = errors.New("la compra no tiene items")
 )
