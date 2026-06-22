@@ -1,6 +1,11 @@
-import { ComprasService, type dto_CompraListaResponse } from '@primitivo/api-client';
+import {
+  ClientesService,
+  ComprasService,
+  type dto_CompraListaResponse,
+} from '@primitivo/api-client';
 import {
   Body,
+  Button,
   Caption,
   EmptyState,
   Icon,
@@ -50,19 +55,19 @@ const inicioMesAnterior = () => {
 };
 const finMesAnterior = () => {
   const dt = new Date();
-  dt.setDate(0); // último día del mes anterior
+  dt.setDate(0);
   return dt.toISOString().slice(0, 10);
 };
 
 type Rango = 'hoy' | 'ayer' | 'semana' | 'mes' | 'mes_ant' | 'custom';
 
 const RANGOS: { key: Rango; label: string }[] = [
-  { key: 'hoy', label: 'Hoy' },
-  { key: 'ayer', label: 'Ayer' },
-  { key: 'semana', label: 'Últimos 7 días' },
-  { key: 'mes', label: 'Este mes' },
+  { key: 'hoy',     label: 'Hoy' },
+  { key: 'ayer',    label: 'Ayer' },
+  { key: 'semana',  label: 'Últimos 7 días' },
+  { key: 'mes',     label: 'Este mes' },
   { key: 'mes_ant', label: 'Mes anterior' },
-  { key: 'custom', label: 'Personalizado' },
+  { key: 'custom',  label: 'Personalizado' },
 ];
 
 function rangoFechas(rango: Rango, customDesde: string, customHasta: string): [string, string] {
@@ -76,6 +81,23 @@ function rangoFechas(rango: Rango, customDesde: string, customHasta: string): [s
   }
 }
 
+// ── CSV ───────────────────────────────────────────────────────────────────────
+
+function downloadCSV(filename: string, rows: string[][]): void {
+  if (typeof document === 'undefined') return;
+  const content = rows
+    .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  // BOM para que Excel abra con tildes correctamente
+  const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ReportesScreen() {
@@ -87,7 +109,7 @@ export default function ReportesScreen() {
 function ReportesContent() {
   const { isDesktop } = useBreakpoint();
 
-  const [rango, setRango] = useState<Rango>('hoy');
+  const [rango,       setRango]       = useState<Rango>('hoy');
   const [customDesde, setCustomDesde] = useState(hoy());
   const [customHasta, setCustomHasta] = useState(hoy());
 
@@ -98,18 +120,90 @@ function ReportesContent() {
     queryFn: () => ComprasService.getCompras(desde, hasta),
   });
 
-  // ── Métricas derivadas ─────────────────────────────────────────────────────
-  const metricas = useMemo(() => {
-    const totalVentas = compras.reduce((s, c) => s + (c.total ?? 0), 0);
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn:  () => ClientesService.getClientes(),
+  });
+
+  // ── Métricas de compras ────────────────────────────────────────────────────
+  const comprasMetricas = useMemo(() => {
+    const totalVentas     = compras.reduce((s, c) => s + (c.total ?? 0), 0);
     const totalDescuentos = compras.reduce((s, c) => s + (c.descuento ?? 0), 0);
-    const ticketPromedio = compras.length > 0 ? Math.round(totalVentas / compras.length) : 0;
+    const ticketPromedio  = compras.length > 0 ? Math.round(totalVentas / compras.length) : 0;
     return { totalVentas, totalDescuentos, ticketPromedio, cantidad: compras.length };
   }, [compras]);
 
+  // ── Métricas de clientes ───────────────────────────────────────────────────
+  const clientesMetricas = useMemo(() => {
+    const d0 = new Date(desde);
+    const d1 = new Date(hasta);
+    d1.setHours(23, 59, 59, 999);
+
+    const nuevos = clientes.filter((c) => {
+      if (!c.created_at) return false;
+      const d = new Date(c.created_at);
+      return d >= d0 && d <= d1;
+    }).length;
+
+    // Clientes únicos que compraron en el período
+    const activos = new Set(compras.map((c) => c.cliente_dni).filter(Boolean)).size;
+
+    return { total: clientes.length, nuevos, activos };
+  }, [clientes, compras, desde, hasta]);
+
+  // ── Exportar CSV ──────────────────────────────────────────────────────────
+  const exportComprasCSV = () => {
+    const rows = [
+      ['Fecha', 'Hora', 'Cliente', 'DNI', 'Subtotal', 'Descuento', 'Total'],
+      ...compras.map((c) => [
+        c.fecha ? fmtFecha(c.fecha) : '',
+        c.fecha ? fmtHora(c.fecha)  : '',
+        c.cliente_nombre ?? '',
+        c.cliente_dni    ?? '',
+        String(c.subtotal ?? 0),
+        String(c.descuento ?? 0),
+        String(c.total ?? 0),
+      ]),
+    ];
+    downloadCSV(`compras_${desde}_${hasta}.csv`, rows);
+  };
+
+  const exportClientesCSV = () => {
+    const rows = [
+      ['Nombre', 'DNI', 'Email', 'Institución', 'Infusiones', 'Registro'],
+      ...clientes.map((c) => [
+        c.nombre              ?? '',
+        c.dni                 ?? '',
+        c.email               ?? '',
+        c.institucion_nombre  ?? '',
+        String(c.contador_infusiones ?? 0),
+        c.created_at ? new Date(c.created_at).toLocaleDateString('es-AR') : '',
+      ]),
+    ];
+    downloadCSV('clientes.csv', rows);
+  };
+
   return (
     <Screen scroll>
+      {/* ── Header ── */}
       <View style={styles.pageHeader}>
         <Title>Reportes</Title>
+        <View style={styles.exportBtns}>
+          <Button
+            title="Exportar compras"
+            icon="download"
+            variant="secondary"
+            onPress={exportComprasCSV}
+            disabled={compras.length === 0}
+          />
+          <Button
+            title="Exportar clientes"
+            icon="group"
+            variant="secondary"
+            onPress={exportClientesCSV}
+            disabled={clientes.length === 0}
+          />
+        </View>
       </View>
 
       {/* ── Filtro de rango ── */}
@@ -157,19 +251,30 @@ function ReportesContent() {
         )}
       </View>
 
-      {/* ── Stat cards ── */}
+      {/* ── Stats compras ── */}
+      <SectionTitle label="Compras" />
       <View style={[styles.statsGrid, isDesktop && styles.statsGridDesktop]}>
-        <StatBox label="Ventas" value={moneda(metricas.totalVentas)} icon="payments" />
-        <StatBox label="Transacciones" value={String(metricas.cantidad)} icon="receipt-long" />
-        <StatBox label="Ticket promedio" value={moneda(metricas.ticketPromedio)} icon="bar-chart" />
-        <StatBox label="Descuentos" value={moneda(metricas.totalDescuentos)} icon="redeem" tone="muted" />
+        <StatBox label="Ventas"          value={moneda(comprasMetricas.totalVentas)}     icon="payments" />
+        <StatBox label="Transacciones"   value={String(comprasMetricas.cantidad)}         icon="receipt-long" />
+        <StatBox label="Ticket promedio" value={moneda(comprasMetricas.ticketPromedio)}   icon="bar-chart" />
+        <StatBox label="Descuentos"      value={moneda(comprasMetricas.totalDescuentos)}  icon="redeem" tone="muted" />
+      </View>
+
+      {/* ── Stats clientes ── */}
+      <SectionTitle label="Clientes" />
+      <View style={[styles.statsGrid, styles.statsGridClientes, isDesktop && styles.statsGridClientesDesktop]}>
+        <StatBox label="Total registrados"    value={String(clientesMetricas.total)}    icon="group" />
+        <StatBox label="Nuevos en el período" value={String(clientesMetricas.nuevos)}   icon="person-add" />
+        <StatBox label="Activos en período"   value={String(clientesMetricas.activos)}  icon="local-cafe" />
       </View>
 
       {/* ── Historial ── */}
       <View style={styles.historialHeader}>
         <Label style={styles.historialTitle}>Historial de compras</Label>
         <Caption style={{ color: theme.colors.onSurfaceVariant }}>
-          {desde === hasta ? fmtFecha(desde + 'T00:00:00') : `${fmtFecha(desde + 'T00:00:00')} — ${fmtFecha(hasta + 'T00:00:00')}`}
+          {desde === hasta
+            ? fmtFecha(desde + 'T00:00:00')
+            : `${fmtFecha(desde + 'T00:00:00')} — ${fmtFecha(hasta + 'T00:00:00')}`}
         </Caption>
       </View>
 
@@ -191,6 +296,16 @@ function ReportesContent() {
         <HistorialTable compras={compras} isDesktop={isDesktop} />
       )}
     </Screen>
+  );
+}
+
+// ── SectionTitle ──────────────────────────────────────────────────────────────
+
+function SectionTitle({ label }: { label: string }) {
+  return (
+    <View style={styles.sectionTitle}>
+      <Label style={styles.sectionTitleText}>{label}</Label>
+    </View>
   );
 }
 
@@ -229,7 +344,6 @@ function HistorialTable({
 }) {
   return (
     <View style={styles.table}>
-      {/* Cabecera — solo desktop */}
       {isDesktop && (
         <View style={[styles.tableRow, styles.tableHead]}>
           <Caption style={[styles.cell, styles.cellFecha]}>Fecha / Hora</Caption>
@@ -266,7 +380,6 @@ function HistorialTable({
               <Text style={[styles.cell, styles.cellNum, styles.totalText]}>{moneda(c.total ?? 0)}</Text>
             </>
           ) : (
-            /* Vista mobile: card compacta */
             <>
               <View style={{ flex: 1 }}>
                 <View style={styles.mobileTopRow}>
@@ -290,7 +403,6 @@ function HistorialTable({
         </View>
       ))}
 
-      {/* Totalizador */}
       <View style={styles.totalRow}>
         <Caption style={{ flex: 1, color: theme.colors.onSurfaceVariant }}>
           {compras.length} venta{compras.length !== 1 ? 's' : ''}
@@ -311,39 +423,59 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: theme.spacing.sm,
+    gap: theme.spacing.md,
+  },
+  exportBtns: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
   },
 
   // Filtro
   filtroSection: { gap: theme.spacing.sm, marginBottom: theme.spacing.lg },
-  filtroTitle: { color: theme.colors.onSurfaceVariant, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1 },
-  chipRow: { flexDirection: 'row', gap: theme.spacing.sm },
+  filtroTitle:   { color: theme.colors.onSurfaceVariant, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1 },
+  chipRow:       { flexDirection: 'row', gap: theme.spacing.sm },
   chip: {
-    paddingVertical: theme.spacing.xs,
+    paddingVertical:   theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
+    borderWidth:   1,
+    borderColor:   theme.colors.outlineVariant,
   },
-  chipActive: { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
-  chipText: { color: theme.colors.onSurface },
+  chipActive:     { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
+  chipText:       { color: theme.colors.onSurface },
   chipTextActive: { color: theme.colors.white },
-  customRow: { gap: theme.spacing.md },
+  customRow:        { gap: theme.spacing.md },
   customRowDesktop: { flexDirection: 'row' },
   dateField: { gap: theme.spacing.xs, flex: 1 },
   dateLabel: { color: theme.colors.onSurfaceVariant },
   dateInput: {
-    borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
+    borderWidth:       1,
+    borderColor:       theme.colors.outlineVariant,
     paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.bodyMd,
-    color: theme.colors.onSurface,
+    paddingVertical:   theme.spacing.sm,
+    fontFamily:  theme.typography.fontFamily.body,
+    fontSize:    theme.typography.fontSize.bodyMd,
+    color:       theme.colors.onSurface,
     backgroundColor: theme.colors.surfaceContainerLowest,
+  },
+
+  // Section titles
+  sectionTitle: {
+    paddingBottom: theme.spacing.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.black,
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitleText: {
+    fontSize:   theme.typography.fontSize.headlineMd,
+    color:      theme.colors.black,
+    textTransform: 'uppercase',
   },
 
   // Stats
   statsGrid: { gap: theme.spacing.md, marginBottom: theme.spacing.xl },
   statsGridDesktop: { flexDirection: 'row' },
+  statsGridClientes: { marginBottom: theme.spacing.xl },
+  statsGridClientesDesktop: { flexDirection: 'row' },
   statBox: {
     flex: 1,
     borderWidth: 2,
@@ -351,79 +483,76 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     gap: theme.spacing.xs,
     backgroundColor: theme.colors.surfaceContainerLowest,
-    shadowColor: theme.colors.black,
+    shadowColor:  theme.colors.black,
     shadowOffset: { width: 4, height: 4 },
     shadowRadius: 0,
     shadowOpacity: 1,
     elevation: 4,
   },
   statBoxMuted: { borderColor: theme.colors.outlineVariant, shadowOpacity: 0, elevation: 0 },
-  statIcon: { marginBottom: 2 },
+  statIcon:  { marginBottom: 2 },
   statValue: {
     fontFamily: theme.typography.fontFamily.display,
-    fontSize: theme.typography.fontSize.headlineLg,
-    color: theme.colors.black,
+    fontSize:   theme.typography.fontSize.headlineLg,
+    color:      theme.colors.black,
   },
   statValueMuted: { color: theme.colors.onSurfaceVariant },
-  statLabel: { color: theme.colors.onSurfaceVariant },
+  statLabel:      { color: theme.colors.onSurfaceVariant },
 
   // Historial header
   historialHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems:    'center',
     justifyContent: 'space-between',
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.black,
-    paddingBottom: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    paddingBottom:  theme.spacing.sm,
+    marginBottom:   theme.spacing.sm,
   },
   historialTitle: { fontSize: theme.typography.fontSize.headlineMd, color: theme.colors.black },
 
   // Tabla
   table: {
-    borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
-    overflow: 'hidden',
+    borderWidth:  1,
+    borderColor:  theme.colors.outlineVariant,
+    overflow:     'hidden',
   },
   tableHead: {
-    backgroundColor: theme.colors.surfaceVariant,
+    backgroundColor:  theme.colors.surfaceVariant,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.black,
   },
   tableRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems:    'center',
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical:   theme.spacing.sm,
     gap: theme.spacing.md,
   },
   tableRowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant },
   tableRowMobile: { paddingVertical: theme.spacing.md },
 
-  // Celdas desktop
-  cell: { overflow: 'hidden' },
-  cellFecha: { width: 120 },
+  cell:        { overflow: 'hidden' },
+  cellFecha:   { width: 120 },
   cellCliente: { flex: 1 },
-  cellNum: { width: 110, textAlign: 'right' },
+  cellNum:     { width: 110, textAlign: 'right' },
 
-  // Mobile
-  mobileTopRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  mobileTopRow:    { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   mobileBottomRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
 
-  // Totalizador
   totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection:  'row',
+    alignItems:     'center',
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: 2,
-    borderTopColor: theme.colors.black,
-    backgroundColor: theme.colors.surfaceVariant,
+    paddingVertical:   theme.spacing.sm,
+    borderTopWidth:    2,
+    borderTopColor:    theme.colors.black,
+    backgroundColor:   theme.colors.surfaceVariant,
   },
   totalText: {
     fontFamily: theme.typography.fontFamily.bodyBold,
-    fontSize: theme.typography.fontSize.bodyMd,
-    color: theme.colors.black,
+    fontSize:   theme.typography.fontSize.bodyMd,
+    color:      theme.colors.black,
   },
   descuentoText: { color: theme.colors.success },
 });
