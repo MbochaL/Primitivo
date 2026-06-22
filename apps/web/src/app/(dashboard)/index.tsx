@@ -192,7 +192,7 @@ function ReportesContent() {
   return (
     <Screen scroll>
       {/* ── Header ── */}
-      <View style={styles.pageHeader}>
+      <View style={[styles.pageHeader, isDesktop && styles.pageHeaderDesktop]}>
         <Title>Reportes</Title>
         <View style={styles.exportBtns}>
           <Button
@@ -425,15 +425,19 @@ function HistorialTable({
 
 const styles = StyleSheet.create({
   pageHeader: {
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  pageHeaderDesktop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
     gap: theme.spacing.md,
   },
   exportBtns: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
+    flexWrap: 'wrap',
   },
 
   // Filtro

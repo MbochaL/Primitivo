@@ -2,6 +2,7 @@ import { Icon, Label, theme, type IconName } from '@primitivo/ui';
 import { type Href, usePathname, useRouter } from 'expo-router';
 import { type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/lib/auth';
 
@@ -111,8 +112,9 @@ function Sidebar({
 }
 
 function TopBar({ onLogout }: { onLogout: () => void }) {
+  const { top } = useSafeAreaInsets();
   return (
-    <View style={styles.topbar}>
+    <View style={[styles.topbar, { paddingTop: top }]}>
       <Text style={styles.topbarBrand}>PRIMITIVO</Text>
       <Pressable onPress={onLogout} hitSlop={8}>
         <Icon name="logout" size={24} color={theme.colors.black} />
@@ -122,9 +124,10 @@ function TopBar({ onLogout }: { onLogout: () => void }) {
 }
 
 function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
+  const { bottom } = useSafeAreaInsets();
   const router = useRouter();
   return (
-    <View style={styles.bottomnav}>
+    <View style={[styles.bottomnav, { paddingBottom: bottom }]}>
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (

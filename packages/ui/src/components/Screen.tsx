@@ -1,5 +1,13 @@
 import { type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { theme } from '../theme';
 
@@ -20,14 +28,27 @@ export function Screen({ children, center = false, scroll = false, style }: Prop
         style={styles.flex}
         contentContainerStyle={[styles.content, style]}
         keyboardShouldPersistTaps="handled"
+        // iOS: ajusta automáticamente el scroll cuando aparece el teclado
+        automaticallyAdjustKeyboardInsets
       >
         {children}
       </ScrollView>
     );
   }
 
+  if (center) {
+    return (
+      <KeyboardAvoidingView
+        style={[styles.flex, styles.center]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={[styles.content, style]}>{children}</View>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
-    <View style={[styles.flex, styles.content, center && styles.center, style]}>{children}</View>
+    <View style={[styles.flex, styles.content, style]}>{children}</View>
   );
 }
 
