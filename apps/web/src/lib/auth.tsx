@@ -20,35 +20,44 @@ interface AuthContextValue {
   estado: Estado;
   rol: Rol | null;
   esAdmin: boolean;
+  usuarioId: string | null;
   login: (email: string, password: string) => Promise<Rol | null>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Decodifica el claim `rol` del payload de un JWT (sin verificar la firma). */
-function decodeRol(token: string): Rol | null {
+/** Decodifica el payload de un JWT (sin verificar la firma). */
+function decodePayload(token: string): { rol?: string; sub?: string } {
   try {
     const payload = token.split('.')[1];
-    if (!payload) return null;
+    if (!payload) return {};
     const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    const data = JSON.parse(json) as { rol?: string };
-    if (data.rol === 'administrador' || data.rol === 'operador') {
-      return data.rol;
-    }
-    return null;
+    return JSON.parse(json) as { rol?: string; sub?: string };
   } catch {
-    return null;
+    return {};
   }
+}
+
+function decodeRol(token: string): Rol | null {
+  const { rol } = decodePayload(token);
+  if (rol === 'administrador' || rol === 'operador') return rol;
+  return null;
+}
+
+function decodeSub(token: string): string | null {
+  return decodePayload(token).sub ?? null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>('cargando');
   const [rol, setRol] = useState<Rol | null>(null);
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
 
   const aplicarToken = useCallback((accessToken: string) => {
     setAuthToken(accessToken);
     setRol(decodeRol(accessToken));
+    setUsuarioId(decodeSub(accessToken));
     setEstado('autenticado');
   }, []);
 
@@ -84,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.multiRemove([ACCESS_KEY, REFRESH_KEY]);
     setAuthToken(undefined);
     setRol(null);
+    setUsuarioId(null);
     setEstado('no_autenticado');
   }, []);
 
@@ -92,10 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       estado,
       rol,
       esAdmin: rol === 'administrador',
+      usuarioId,
       login,
       logout,
     }),
-    [estado, rol, login, logout],
+    [estado, rol, usuarioId, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

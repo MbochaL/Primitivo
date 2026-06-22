@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/menu', label: 'Menú', icon: 'restaurant-menu', adminOnly: true },
   { href: '/beneficios', label: 'Beneficios', icon: 'loyalty', adminOnly: true },
   { href: '/instituciones', label: 'Instituciones', icon: 'domain', adminOnly: true },
+  { href: '/usuarios', label: 'Usuarios', icon: 'manage-accounts', adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH = 256;
