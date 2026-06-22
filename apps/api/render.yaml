@@ -14,4 +14,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: https://primitivo.vercel.app,https://primitivo-api.onrender.com
+        value: https://primitivo.vercel.app,https://primitivo.onrender.com
