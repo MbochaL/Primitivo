@@ -3,6 +3,9 @@ import {
   ComprasService,
   type dto_CompraListaResponse,
 } from '@primitivo/api-client';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 import {
   Body,
   Button,
@@ -83,19 +86,33 @@ function rangoFechas(rango: Rango, customDesde: string, customHasta: string): [s
 
 // ── CSV ───────────────────────────────────────────────────────────────────────
 
-function downloadCSV(filename: string, rows: string[][]): void {
-  if (typeof document === 'undefined') return;
+async function downloadCSV(filename: string, rows: string[][]): Promise<void> {
   const content = rows
     .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
     .join('\n');
   // BOM para que Excel abra con tildes correctamente
-  const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  const bom = '﻿';
+
+  if (Platform.OS === 'web') {
+    const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  } else {
+    // Nativo: escribir al cache y compartir vía hoja de compartir del SO
+    const path = (FileSystem.cacheDirectory ?? '') + filename;
+    await FileSystem.writeAsStringAsync(path, bom + content, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+    await Sharing.shareAsync(path, {
+      mimeType: 'text/csv',
+      dialogTitle: `Exportar ${filename}`,
+      UTI: 'public.comma-separated-values-text',
+    });
+  }
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -152,7 +169,7 @@ function ReportesContent() {
   }, [clientes, compras, desde, hasta]);
 
   // ── Exportar CSV ──────────────────────────────────────────────────────────
-  const exportComprasCSV = () => {
+  const exportComprasCSV = async () => {
     const rows = [
       ['Fecha', 'Hora', 'Cliente', 'DNI', 'Subtotal', 'Descuento', 'Total'],
       ...compras.map((c) => [
@@ -168,7 +185,7 @@ function ReportesContent() {
     downloadCSV(`compras_${desde}_${hasta}.csv`, rows);
   };
 
-  const exportClientesCSV = () => {
+  const exportClientesCSV = async () => {
     const rows = [
       ['Nombre', 'DNI', 'Email', 'Institución', 'Infusiones', 'Registro'],
       ...clientes.map((c) => [

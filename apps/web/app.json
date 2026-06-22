@@ -8,9 +8,11 @@
     "scheme": "primitivo",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "app.primitivo.caja"
     },
     "android": {
+      "package": "app.primitivo.caja",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
