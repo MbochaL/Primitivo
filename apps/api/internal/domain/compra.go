@@ -30,3 +30,15 @@ type NuevaCompra struct {
 	Items       []ItemCompra
 	CondicionID *uuid.UUID // beneficio a canjear (opcional)
 }
+
+// CompraConCliente es una fila del historial global (join con clientes).
+type CompraConCliente struct {
+	ID            uuid.UUID
+	ClienteID     uuid.UUID
+	ClienteNombre string
+	ClienteDNI    string
+	Subtotal      int
+	Descuento     int
+	Total         int
+	Fecha         time.Time
+}

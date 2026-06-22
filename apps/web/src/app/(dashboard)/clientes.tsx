@@ -16,13 +16,15 @@ import {
   Label,
   ProgressBar,
   Screen,
+  SearchBar,
+  type SearchSuggestion,
   TextField,
   theme,
   Title,
   useBreakpoint,
 } from '@primitivo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
@@ -49,6 +51,7 @@ export default function ClientesScreen() {
   const [modal, setModal] = useState<{ mode: 'crear' | 'editar'; cliente?: dto_ClienteResponse } | null>(
     null,
   );
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const busqueda = useQuery({
     queryKey: ['clientes', 'dni', buscado],
@@ -58,26 +61,47 @@ export default function ClientesScreen() {
 
   const cliente = busqueda.data?.[0];
 
+  const handleChangeDni = (text: string) => {
+    setDni(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = text.trim();
+    if (trimmed.length >= 3) {
+      debounceRef.current = setTimeout(() => setBuscado(trimmed), 350);
+    } else if (!trimmed) {
+      setBuscado(null);
+    }
+  };
+
+  const suggestions = useMemo<SearchSuggestion[]>(() => {
+    if (!busqueda.data?.length) return [];
+    return busqueda.data.map((c) => ({
+      id: c.id ?? '',
+      label: c.nombre ?? '',
+      sublabel: `DNI ${c.dni}${c.institucion_nombre ? ` · ${c.institucion_nombre}` : ''}`,
+      meta: `${c.contador_infusiones ?? 0} inf.`,
+      icon: 'person' as const,
+    }));
+  }, [busqueda.data]);
+
   return (
     <Screen scroll>
       <View style={styles.headerRow}>
         <Title>Clientes</Title>
         <Button title="Nuevo" icon="person-add" onPress={() => setModal({ mode: 'crear' })} />
       </View>
-      <Body style={styles.subtitle}>Buscá un cliente por DNI para ver su detalle.</Body>
-
-      <View style={styles.searchRow}>
-        <View style={styles.searchInput}>
-          <TextField
-            placeholder="DNI del cliente…"
-            keyboardType="number-pad"
-            value={dni}
-            onChangeText={setDni}
-            onSubmitEditing={() => setBuscado(dni.trim())}
-          />
-        </View>
-        <Button title="Buscar" icon="search" onPress={() => setBuscado(dni.trim())} />
-      </View>
+      <SearchBar
+        value={dni}
+        onChangeText={handleChangeDni}
+        suggestions={suggestions}
+        onSelect={(s) => {
+          const c = busqueda.data?.find((x) => x.id === s.id);
+          if (c?.dni) { setDni(c.dni); setBuscado(c.dni); }
+        }}
+        loading={busqueda.isFetching}
+        keyboardType="number-pad"
+        placeholder="Buscar cliente por DNI…"
+        onSubmitEditing={() => { if (dni.trim()) setBuscado(dni.trim()); }}
+      />
 
       {/* Resultado */}
       {buscado && busqueda.isLoading ? <CardSkeleton lines={4} /> : null}

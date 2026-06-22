@@ -53,14 +53,18 @@ func (m *Manager) GenerateRefreshToken(userID uuid.UUID) (string, error) {
 
 func (m *Manager) generar(userID uuid.UUID, rol, tipo string, ttl time.Duration) (string, error) {
 	now := time.Now()
+	rc := jwt.RegisteredClaims{
+		Subject:  userID.String(),
+		IssuedAt: jwt.NewNumericDate(now),
+	}
+	// ttl == 0 → token sin expiración (sesión permanente).
+	if ttl > 0 {
+		rc.ExpiresAt = jwt.NewNumericDate(now.Add(ttl))
+	}
 	claims := Claims{
-		Rol:  rol,
-		Tipo: tipo,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   userID.String(),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
-		},
+		Rol:              rol,
+		Tipo:             tipo,
+		RegisteredClaims: rc,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(m.secret)

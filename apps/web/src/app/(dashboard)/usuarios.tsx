@@ -16,6 +16,8 @@ import {
   Label,
   ResponsiveTable,
   Screen,
+  SearchBar,
+  type SearchSuggestion,
   TableSkeleton,
   TextField,
   theme,
@@ -58,31 +60,32 @@ const crearUsuarioSchema = z.object({
 });
 type CrearUsuarioForm = z.infer<typeof crearUsuarioSchema>;
 
-const editarUsuarioSchema = z.object({
-  email: z.string().email('Email inválido'),
-  rol: z.enum([
-    dto_ActualizarUsuarioRequest.rol.ADMINISTRADOR,
-    dto_ActualizarUsuarioRequest.rol.OPERADOR,
-  ]),
-  activo: z.boolean(),
-});
+const editarUsuarioSchema = z
+  .object({
+    email: z.string().email('Email inválido'),
+    rol: z.enum([
+      dto_ActualizarUsuarioRequest.rol.ADMINISTRADOR,
+      dto_ActualizarUsuarioRequest.rol.OPERADOR,
+    ]),
+    activo: z.boolean(),
+    nueva_password: z.string().or(z.literal('')).optional(),
+    confirmar_password: z.string().or(z.literal('')).optional(),
+  })
+  .refine((d) => !d.nueva_password || d.nueva_password.length >= 8, {
+    message: 'Mínimo 8 caracteres',
+    path: ['nueva_password'],
+  })
+  .refine((d) => !d.nueva_password || d.nueva_password === d.confirmar_password, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmar_password'],
+  });
 type EditarUsuarioForm = z.infer<typeof editarUsuarioSchema>;
-
-const passwordSchema = z.object({
-  password: z.string().min(8, 'Mínimo 8 caracteres'),
-  confirmar: z.string().min(8, 'Mínimo 8 caracteres'),
-}).refine((d) => d.password === d.confirmar, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmar'],
-});
-type PasswordForm = z.infer<typeof passwordSchema>;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function UsuariosScreen() {
   const { esAdmin } = useAuth();
   if (!esAdmin) return <Redirect href="/clientes" />;
-
   return <UsuariosContent />;
 }
 
@@ -93,17 +96,36 @@ function UsuariosContent() {
 
   type ModalState =
     | { type: 'crear' }
-    | { type: 'editar'; usuario: dto_UsuarioResponse }
-    | { type: 'password'; usuario: dto_UsuarioResponse };
+    | { type: 'editar'; usuario: dto_UsuarioResponse };
 
   const [modal, setModal] = useState<ModalState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<dto_UsuarioResponse | null>(null);
+  const [query, setQuery] = useState('');
 
   // ── queries ───────────────────────────────────────────────────────────────
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => UsuariosService.getUsuarios(),
   });
+
+  // ── búsqueda ──────────────────────────────────────────────────────────────
+  const filtrados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return usuarios;
+    return usuarios.filter(
+      (u) => u.email?.toLowerCase().includes(q) || u.rol?.toLowerCase().includes(q),
+    );
+  }, [usuarios, query]);
+
+  const suggestions = useMemo<SearchSuggestion[]>(() => {
+    return filtrados.slice(0, 8).map((u) => ({
+      id: u.id ?? '',
+      label: u.email ?? '',
+      sublabel: labelRol(u.rol ?? ''),
+      icon: (u.rol === 'administrador' ? 'admin-panel-settings' : 'point-of-sale') as SearchSuggestion['icon'],
+      inactive: !u.activo,
+    }));
+  }, [filtrados]);
 
   // ── mutations ─────────────────────────────────────────────────────────────
   const crear = useMutation({
@@ -121,6 +143,7 @@ function UsuariosContent() {
     onError: (e) => toast.error(mensajeDeError(e)),
   });
 
+  // Editar y resetPassword sin side effects: la lógica vive en el onSubmit del modal.
   const editar = useMutation({
     mutationFn: ({ id, d }: { id: string; d: EditarUsuarioForm }) =>
       UsuariosService.putUsuarios(id, {
@@ -128,22 +151,11 @@ function UsuariosContent() {
         rol: d.rol as dto_ActualizarUsuarioRequest.rol,
         activo: d.activo,
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('Usuario actualizado');
-      setModal(null);
-    },
-    onError: (e) => toast.error(mensajeDeError(e)),
   });
 
   const resetPassword = useMutation({
     mutationFn: ({ id, password }: { id: string; password: string }) =>
       UsuariosService.putUsuariosPassword(id, { password }),
-    onSuccess: () => {
-      toast.success('Contraseña actualizada');
-      setModal(null);
-    },
-    onError: (e) => toast.error(mensajeDeError(e)),
   });
 
   const desactivar = useMutation({
@@ -211,13 +223,6 @@ function UsuariosContent() {
         >
           <Icon name="edit" size={18} color={theme.colors.black} />
         </Pressable>
-        <Pressable
-          style={styles.iconBtn}
-          onPress={() => setModal({ type: 'password', usuario: u })}
-          accessibilityLabel="Resetear contraseña"
-        >
-          <Icon name="lock-reset" size={18} color={theme.colors.black} />
-        </Pressable>
         {u.activo && !esSelf && (
           <Pressable
             style={[styles.iconBtn, styles.iconBtnDanger]}
@@ -243,6 +248,15 @@ function UsuariosContent() {
         />
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        suggestions={suggestions}
+        onSelect={(s) => setQuery(s.label)}
+        placeholder="Buscar por email o rol…"
+        autoCapitalize="none"
+      />
+
       {isLoading && <TableSkeleton rows={4} />}
 
       {!isLoading && usuarios.length === 0 && (
@@ -255,10 +269,14 @@ function UsuariosContent() {
         />
       )}
 
-      {!isLoading && usuarios.length > 0 && (
+      {!isLoading && usuarios.length > 0 && filtrados.length === 0 && (
+        <EmptyState icon="search-off" title="Sin resultados" description={`No hay usuarios que coincidan con "${query}".`} />
+      )}
+
+      {!isLoading && filtrados.length > 0 && (
         <ResponsiveTable
           columns={columns}
-          data={usuarios}
+          data={filtrados}
           keyExtractor={(u) => u.id ?? ''}
           rowActions={rowActions}
         />
@@ -278,20 +296,22 @@ function UsuariosContent() {
         <EditarUsuarioModal
           visible
           usuario={modal.usuario}
-          loading={editar.isPending}
-          onSubmit={(d) => modal.usuario.id && editar.mutate({ id: modal.usuario.id, d })}
-          onClose={() => setModal(null)}
-        />
-      )}
-
-      {modal?.type === 'password' && (
-        <ResetPasswordModal
-          visible
-          usuario={modal.usuario}
-          loading={resetPassword.isPending}
-          onSubmit={(d) =>
-            modal.usuario.id && resetPassword.mutate({ id: modal.usuario.id, password: d.password })
-          }
+          loading={editar.isPending || resetPassword.isPending}
+          onSubmit={async (d) => {
+            if (!modal.usuario.id) return;
+            const id = modal.usuario.id;
+            try {
+              await editar.mutateAsync({ id, d });
+              if (d.nueva_password) {
+                await resetPassword.mutateAsync({ id, password: d.nueva_password });
+              }
+              qc.invalidateQueries({ queryKey: ['usuarios'] });
+              toast.success(d.nueva_password ? 'Usuario y contraseña actualizados' : 'Usuario actualizado');
+              setModal(null);
+            } catch (e) {
+              toast.error(mensajeDeError(e));
+            }
+          }}
           onClose={() => setModal(null)}
         />
       )}
@@ -375,7 +395,7 @@ function CrearUsuarioModal({
         name="password"
         render={({ field }) => (
           <TextField
-            label="Contraseña inicial"
+            label="Contraseña"
             placeholder="Mínimo 8 caracteres"
             value={field.value}
             onChangeText={field.onChange}
@@ -402,7 +422,7 @@ function EditarUsuarioModal({
   visible: boolean;
   usuario: dto_UsuarioResponse;
   loading: boolean;
-  onSubmit: (d: EditarUsuarioForm) => void;
+  onSubmit: (d: EditarUsuarioForm) => Promise<void>;
   onClose: () => void;
 }) {
   const {
@@ -417,6 +437,8 @@ function EditarUsuarioModal({
       email: usuario.email ?? '',
       rol: (usuario.rol as RolValue) ?? dto_ActualizarUsuarioRequest.rol.OPERADOR,
       activo: usuario.activo ?? true,
+      nueva_password: '',
+      confirmar_password: '',
     },
   });
 
@@ -461,74 +483,42 @@ function EditarUsuarioModal({
         </View>
         <Body>Activo</Body>
       </Pressable>
-    </FormModal>
-  );
-}
 
-// ── ResetPasswordModal ────────────────────────────────────────────────────────
+      {/* ── Sección contraseña ── */}
+      <View style={styles.passwordDivider}>
+        <View style={styles.passwordDividerLine} />
+        <Caption style={styles.passwordDividerLabel}>Cambiar contraseña</Caption>
+        <View style={styles.passwordDividerLine} />
+      </View>
 
-function ResetPasswordModal({
-  visible,
-  usuario,
-  loading,
-  onSubmit,
-  onClose,
-}: {
-  visible: boolean;
-  usuario: dto_UsuarioResponse;
-  loading: boolean;
-  onSubmit: (d: PasswordForm) => void;
-  onClose: () => void;
-}) {
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<PasswordForm>({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: { password: '', confirmar: '' },
-  });
+      <Caption style={styles.passwordHint}>Dejá en blanco para no cambiar la contraseña.</Caption>
 
-  return (
-    <FormModal
-      visible={visible}
-      title={`Contraseña — ${usuario.email}`}
-      onClose={onClose}
-      footer={
-        <Button
-          title="Actualizar contraseña"
-          variant="primary"
-          fullWidth
-          loading={loading}
-          onPress={handleSubmit(onSubmit)}
-        />
-      }
-    >
       <Controller
         control={control}
-        name="password"
+        name="nueva_password"
         render={({ field }) => (
           <TextField
             label="Nueva contraseña"
             placeholder="Mínimo 8 caracteres"
-            value={field.value}
+            value={field.value ?? ''}
             onChangeText={field.onChange}
             secureTextEntry
-            error={errors.password?.message}
+            error={errors.nueva_password?.message}
           />
         )}
       />
+
       <Controller
         control={control}
-        name="confirmar"
+        name="confirmar_password"
         render={({ field }) => (
           <TextField
             label="Confirmar contraseña"
-            placeholder="Repetí la contraseña"
-            value={field.value}
+            placeholder="Repetí la nueva contraseña"
+            value={field.value ?? ''}
             onChangeText={field.onChange}
             secureTextEntry
-            error={errors.confirmar?.message}
+            error={errors.confirmar_password?.message}
           />
         )}
       />
@@ -631,4 +621,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleBoxOn: { backgroundColor: theme.colors.black },
+  // password section
+  passwordDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
+  },
+  passwordDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.outlineVariant,
+  },
+  passwordDividerLabel: {
+    color: theme.colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  passwordHint: {
+    color: theme.colors.onSurfaceVariant,
+  },
 });

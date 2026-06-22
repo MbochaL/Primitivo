@@ -272,6 +272,38 @@ func ToProductosAdminResponse(prods []domain.Producto) []ProductoAdminResponse {
 	return out
 }
 
+// ── Historial global de compras (admin) ─────────────────────────────────────
+
+// CompraListaResponse es una fila del historial global (con datos del cliente).
+type CompraListaResponse struct {
+	ID            string    `json:"id"`
+	ClienteID     string    `json:"cliente_id"`
+	ClienteNombre string    `json:"cliente_nombre"`
+	ClienteDNI    string    `json:"cliente_dni"`
+	Subtotal      int       `json:"subtotal"`
+	Descuento     int       `json:"descuento"`
+	Total         int       `json:"total"`
+	Fecha         time.Time `json:"fecha"`
+}
+
+// ToCompraListaResponseList mapea el historial global a sus DTOs.
+func ToCompraListaResponseList(compras []domain.CompraConCliente) []CompraListaResponse {
+	out := make([]CompraListaResponse, 0, len(compras))
+	for _, c := range compras {
+		out = append(out, CompraListaResponse{
+			ID:            c.ID.String(),
+			ClienteID:     c.ClienteID.String(),
+			ClienteNombre: c.ClienteNombre,
+			ClienteDNI:    c.ClienteDNI,
+			Subtotal:      c.Subtotal,
+			Descuento:     c.Descuento,
+			Total:         c.Total,
+			Fecha:         c.Fecha,
+		})
+	}
+	return out
+}
+
 // ── Compra registrada ───────────────────────────────────────────────────────
 
 // CompraRegistradaResponse es el resultado de registrar una venta.

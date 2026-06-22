@@ -89,6 +89,9 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 				admin.PUT("/productos/:id", h.Menu.ActualizarProducto)
 				admin.DELETE("/productos/:id", h.Menu.DesactivarProducto)
 
+				// Historial global de compras
+				admin.GET("/compras", h.Compra.List)
+
 				// Beneficios y condiciones
 				admin.GET("/beneficios", h.Beneficio.List)
 				admin.POST("/beneficios", h.Beneficio.Crear)

@@ -20,3 +20,4 @@ export * from './components/Skeleton';
 export * from './components/Spinner';
 export * from './components/EmptyState';
 export * from './components/ResponsiveTable';
+export * from './components/SearchBar';

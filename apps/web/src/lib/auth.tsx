@@ -28,12 +28,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /** Decodifica el payload de un JWT (sin verificar la firma). */
-function decodePayload(token: string): { rol?: string; sub?: string } {
+function decodePayload(token: string): { rol?: string; sub?: string; exp?: number } {
   try {
     const payload = token.split('.')[1];
     if (!payload) return {};
     const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(json) as { rol?: string; sub?: string };
+    return JSON.parse(json) as { rol?: string; sub?: string; exp?: number };
   } catch {
     return {};
   }
@@ -49,6 +49,13 @@ function decodeSub(token: string): string | null {
   return decodePayload(token).sub ?? null;
 }
 
+/** Devuelve true si el token tiene `exp` y ya pasó. Tokens sin `exp` nunca expiran. */
+function tokenEstaExpirado(token: string): boolean {
+  const { exp } = decodePayload(token);
+  if (!exp) return false;
+  return Date.now() / 1000 > exp;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>('cargando');
   const [rol, setRol] = useState<Rol | null>(null);
@@ -62,14 +69,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Rehidrata la sesión al arrancar.
+  // Si el access token expiró (tokens viejos de 15min), intenta renovar con el refresh token.
   useEffect(() => {
     (async () => {
-      const accessToken = await AsyncStorage.getItem(ACCESS_KEY);
-      if (accessToken) {
-        aplicarToken(accessToken);
-      } else {
-        setEstado('no_autenticado');
+      const [[, access], [, refresh]] = await AsyncStorage.multiGet([ACCESS_KEY, REFRESH_KEY]);
+
+      // Token válido y no expirado → usar directamente.
+      if (access && !tokenEstaExpirado(access)) {
+        aplicarToken(access);
+        return;
       }
+
+      // Token expirado o ausente → intentar renovar.
+      if (refresh) {
+        try {
+          const tokens = await AuthService.postAuthRefresh({ refresh_token: refresh });
+          if (tokens.access_token) {
+            await AsyncStorage.setItem(ACCESS_KEY, tokens.access_token);
+            if (tokens.refresh_token) {
+              await AsyncStorage.setItem(REFRESH_KEY, tokens.refresh_token);
+            }
+            aplicarToken(tokens.access_token);
+            return;
+          }
+        } catch {
+          // Refresh fallido (token revocado o secreto cambiado): limpiar y pedir login.
+          await AsyncStorage.multiRemove([ACCESS_KEY, REFRESH_KEY]);
+        }
+      }
+
+      setEstado('no_autenticado');
     })();
   }, [aplicarToken]);
 

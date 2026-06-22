@@ -18,6 +18,8 @@ import {
   Label,
   ResponsiveTable,
   Screen,
+  SearchBar,
+  type SearchSuggestion,
   TableSkeleton,
   TextField,
   theme,
@@ -26,7 +28,7 @@ import {
   useToast,
 } from '@primitivo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
@@ -86,6 +88,7 @@ export default function MenuScreen() {
     prod?: dto_ProductoAdminResponse;
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<dto_ProductoAdminResponse | null>(null);
+  const [query, setQuery] = useState('');
 
   // ── queries ───────────────────────────────────────────────────────────────
   const { data: categorias = [], isLoading: loadingCats } = useQuery({
@@ -182,6 +185,26 @@ export default function MenuScreen() {
     },
   });
 
+  // ── búsqueda ──────────────────────────────────────────────────────────────
+  const suggestions = useMemo<SearchSuggestion[]>(() => {
+    const q = query.trim().toLowerCase();
+    const res: SearchSuggestion[] = [];
+    for (const p of productos) {
+      if (q && !p.nombre?.toLowerCase().includes(q) && !p.descripcion?.toLowerCase().includes(q)) continue;
+      const cat = categorias.find((c) => c.id === p.categoria_id);
+      res.push({
+        id: p.id ?? '',
+        label: p.nombre ?? '',
+        sublabel: cat ? `${cat.seccion} · ${cat.nombre}` : undefined,
+        meta: moneda(p.precio ?? 0),
+        icon: p.es_infusion ? 'local-cafe' : 'lunch-dining',
+        inactive: !p.activo,
+      });
+      if (res.length >= 8) break;
+    }
+    return res;
+  }, [productos, categorias, query]);
+
   // ── datos agrupados ───────────────────────────────────────────────────────
   const grouped = useMemo(() => {
     const map = new Map<
@@ -201,6 +224,22 @@ export default function MenuScreen() {
       return (a.cat.orden ?? 0) - (b.cat.orden ?? 0);
     });
   }, [categorias, productos]);
+
+  const filteredGrouped = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return grouped;
+    return grouped
+      .map(({ cat, prods }) => ({
+        cat,
+        prods: prods.filter(
+          (p) =>
+            p.nombre?.toLowerCase().includes(q) ||
+            p.descripcion?.toLowerCase().includes(q) ||
+            cat.nombre?.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((g) => g.prods.length > 0);
+  }, [grouped, query]);
 
   // ── columnas tabla ────────────────────────────────────────────────────────
   const columns = [
@@ -296,6 +335,14 @@ export default function MenuScreen() {
         )}
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        suggestions={suggestions}
+        onSelect={(s) => setQuery(s.label)}
+        placeholder="Buscar producto por nombre o descripción…"
+      />
+
       {loading && (
         <View style={styles.skeletonWrap}>
           <TableSkeleton rows={6} />
@@ -318,9 +365,12 @@ export default function MenuScreen() {
         />
       )}
 
+      {!loading && productos.length > 0 && filteredGrouped.length === 0 && (
+        <EmptyState icon="search-off" title="Sin resultados" description={`No hay productos que coincidan con "${query}".`} />
+      )}
+
       {!loading &&
-        productos.length > 0 &&
-        grouped.map(({ cat, prods }) => (
+        filteredGrouped.map(({ cat, prods }) => (
           <View key={cat.id} style={styles.section}>
             {/* Header de categoría */}
             <View style={styles.catHeader}>
@@ -438,7 +488,7 @@ function CategoriaFormModal({
     },
   });
 
-  useMemo(() => {
+  useEffect(() => {
     reset({
       nombre: initial?.nombre ?? '',
       seccion: (initial?.seccion as SeccionValue) ?? SECCIONES[0],
@@ -555,7 +605,7 @@ function ProductoFormModal({
     },
   });
 
-  useMemo(() => {
+  useEffect(() => {
     reset({
       nombre: initial?.nombre ?? '',
       descripcion: initial?.descripcion ?? '',

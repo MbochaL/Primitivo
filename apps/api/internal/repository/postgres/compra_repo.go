@@ -3,8 +3,10 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/martinbosch1996/primitivo/apps/api/internal/db/sqlc"
@@ -157,4 +159,29 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 		Total:     int(compra.Total),
 		Fecha:     compra.Fecha.Time,
 	}, nil
+}
+
+// ListEnRango devuelve todas las compras (con datos del cliente) dentro del rango [desde, hasta).
+func (r *CompraRepo) ListEnRango(ctx context.Context, desde, hasta time.Time) ([]domain.CompraConCliente, error) {
+	rows, err := sqlc.New(r.pool).ListComprasEnRango(ctx,
+		pgtype.Timestamptz{Time: desde, Valid: true},
+		pgtype.Timestamptz{Time: hasta, Valid: true},
+	)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]domain.CompraConCliente, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, domain.CompraConCliente{
+			ID:            row.ID,
+			ClienteID:     row.ClienteID,
+			ClienteNombre: row.ClienteNombre,
+			ClienteDNI:    row.ClienteDni,
+			Subtotal:      int(row.Subtotal),
+			Descuento:     int(row.Descuento),
+			Total:         int(row.Total),
+			Fecha:         row.Fecha.Time,
+		})
+	}
+	return out, nil
 }

@@ -26,8 +26,8 @@ func Load() Config {
 		Port:               getEnv("PORT", getEnv("API_PORT", "8080")),
 		DatabaseURL:        getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/primitivo?sslmode=disable"),
 		JWTSecret:          getEnv("JWT_SECRET", "dev-secret-cambiar"),
-		JWTAccessTTL:       getDuration("JWT_ACCESS_TTL", 15*time.Minute),
-		JWTRefreshTTL:      getDuration("JWT_REFRESH_TTL", 168*time.Hour),
+		JWTAccessTTL:       getDuration("JWT_ACCESS_TTL", 0),             // 0 = sin expiración
+		JWTRefreshTTL:      getDuration("JWT_REFRESH_TTL", 168*time.Hour), // 7 días
 		CORSAllowedOrigins: splitAndTrim(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8081")),
 	}
 }

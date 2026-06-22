@@ -19,6 +19,7 @@ export type { dto_BeneficioDisponibleResponse } from './models/dto_BeneficioDisp
 export type { dto_CategoriaAdminResponse } from './models/dto_CategoriaAdminResponse';
 export type { dto_CategoriaMenuResponse } from './models/dto_CategoriaMenuResponse';
 export type { dto_ClienteResponse } from './models/dto_ClienteResponse';
+export type { dto_CompraListaResponse } from './models/dto_CompraListaResponse';
 export type { dto_CompraRegistradaResponse } from './models/dto_CompraRegistradaResponse';
 export type { dto_CompraResponse } from './models/dto_CompraResponse';
 export type { dto_CondicionResponse } from './models/dto_CondicionResponse';

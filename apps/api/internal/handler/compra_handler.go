@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -76,4 +77,45 @@ func (h *CompraHandler) Registrar(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, dto.ToCompraRegistradaResponse(compra))
+}
+
+// List godoc
+//
+//	@Summary	Listar compras en un rango de fechas (admin)
+//	@Tags		compras
+//	@Produce	json
+//	@Security	BearerAuth
+//	@Param		desde	query		string	true	"Fecha inicio (YYYY-MM-DD)"
+//	@Param		hasta	query		string	true	"Fecha fin exclusiva (YYYY-MM-DD)"
+//	@Success	200		{array}		dto.CompraListaResponse
+//	@Failure	400		{object}	response.ErrorResponse
+//	@Router		/compras [get]
+func (h *CompraHandler) List(c *gin.Context) {
+	const layout = "2006-01-02"
+
+	desdeStr := c.DefaultQuery("desde", time.Now().Format(layout))
+	hastaStr := c.DefaultQuery("hasta", time.Now().AddDate(0, 0, 1).Format(layout))
+
+	desde, err := time.Parse(layout, desdeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetro 'desde' inválido, usar YYYY-MM-DD"})
+		return
+	}
+	hasta, err := time.Parse(layout, hastaStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetro 'hasta' inválido, usar YYYY-MM-DD"})
+		return
+	}
+	// hasta es exclusivo: incluir todo el día si desde == hasta
+	if !hasta.After(desde) {
+		hasta = desde.AddDate(0, 0, 1)
+	}
+
+	compras, err := h.compras.ListEnRango(c.Request.Context(), desde, hasta)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.ToCompraListaResponseList(compras))
 }

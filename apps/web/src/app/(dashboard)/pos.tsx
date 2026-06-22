@@ -1,17 +1,5 @@
-import { Body, Screen, theme, Title } from '@primitivo/ui';
-import { StyleSheet } from 'react-native';
+import { Redirect } from 'expo-router';
 
 export default function PosScreen() {
-  return (
-    <Screen>
-      <Title>POS</Title>
-      <Body style={styles.p}>
-        Registro de pedido: selección de productos, beneficio aplicado y total. (en construcción)
-      </Body>
-    </Screen>
-  );
+  return <Redirect href="/compras" />;
 }
-
-const styles = StyleSheet.create({
-  p: { color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.sm },
-});

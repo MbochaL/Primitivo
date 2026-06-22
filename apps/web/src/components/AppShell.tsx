@@ -15,9 +15,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: 'dashboard', adminOnly: true },
+  { href: '/compras', label: 'Registrar', icon: 'point-of-sale' },
   { href: '/clientes', label: 'Clientes', icon: 'group' },
-  { href: '/pos', label: 'POS', icon: 'point-of-sale' },
+  { href: '/', label: 'Reportes', icon: 'analytics', adminOnly: true },
   { href: '/menu', label: 'Menú', icon: 'restaurant-menu', adminOnly: true },
   { href: '/beneficios', label: 'Beneficios', icon: 'loyalty', adminOnly: true },
   { href: '/instituciones', label: 'Instituciones', icon: 'domain', adminOnly: true },
@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <View style={styles.mobileRoot}>
       <TopBar onLogout={logout} />
-      <View style={styles.content}>{children}</View>
+      <View style={styles.mobileContent}>{children}</View>
       <BottomNav items={items} pathname={pathname} />
     </View>
   );
@@ -61,7 +61,7 @@ function Brand({ subtitle }: { subtitle: string }) {
   return (
     <View>
       <Text style={styles.brand}>PRIMITIVO</Text>
-      <Label style={styles.brandSub}>{subtitle}</Label>
+      <Label style={styles.brandSub}>CLUB DE BENEFICIOS</Label>
     </View>
   );
 }
@@ -135,10 +135,9 @@ function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) 
           >
             <Icon
               name={item.icon}
-              size={22}
+              size={24}
               color={active ? theme.colors.white : theme.colors.onSurfaceVariant}
             />
-            <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{item.label}</Text>
           </Pressable>
         );
       })}
@@ -150,6 +149,7 @@ const styles = StyleSheet.create({
   desktopRoot: { flex: 1, flexDirection: 'row', backgroundColor: theme.colors.surface },
   mobileRoot: { flex: 1, backgroundColor: theme.colors.surface },
   content: { flex: 1, minWidth: 0 },
+  mobileContent: { flex: 1, minWidth: 0, paddingBottom: 12 },
 
   // Sidebar (desktop)
   sidebar: {
@@ -227,9 +227,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.sm,
-    gap: 2,
-    minHeight: 64,
+    minHeight: 52,
   },
   tabActive: { backgroundColor: theme.colors.black },
   tabLabel: {

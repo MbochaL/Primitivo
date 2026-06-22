@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -76,4 +77,5 @@ type BeneficioRepository interface {
 // CompraRepository registra ventas dentro de una transacción (el corazón del sistema).
 type CompraRepository interface {
 	RegistrarCompra(ctx context.Context, n domain.NuevaCompra) (domain.Compra, error)
+	ListEnRango(ctx context.Context, desde, hasta time.Time) ([]domain.CompraConCliente, error)
 }

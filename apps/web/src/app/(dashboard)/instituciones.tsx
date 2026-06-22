@@ -13,6 +13,8 @@ import {
   Icon,
   ResponsiveTable,
   Screen,
+  SearchBar,
+  type SearchSuggestion,
   TableSkeleton,
   TextField,
   theme,
@@ -20,7 +22,7 @@ import {
   useToast,
 } from '@primitivo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Redirect } from 'expo-router';
@@ -55,12 +57,30 @@ function InstitucionesContent() {
     inst?: dto_InstitucionResponse;
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<dto_InstitucionResponse | null>(null);
+  const [query, setQuery] = useState('');
 
   // ── queries ───────────────────────────────────────────────────────────────
   const { data: instituciones = [], isLoading } = useQuery({
     queryKey: ['instituciones'],
     queryFn: () => InstitucionesService.getInstituciones(),
   });
+
+  // ── búsqueda ──────────────────────────────────────────────────────────────
+  const filtradas = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return instituciones;
+    return instituciones.filter((i) => i.nombre?.toLowerCase().includes(q));
+  }, [instituciones, query]);
+
+  const suggestions = useMemo<SearchSuggestion[]>(() => {
+    return filtradas.slice(0, 8).map((i) => ({
+      id: i.id ?? '',
+      label: i.nombre ?? '',
+      meta: i.activa ? 'Activa' : 'Inactiva',
+      icon: 'domain' as const,
+      inactive: !i.activa,
+    }));
+  }, [filtradas]);
 
   // ── mutations ─────────────────────────────────────────────────────────────
   const crear = useMutation({
@@ -169,6 +189,14 @@ function InstitucionesContent() {
         />
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        suggestions={suggestions}
+        onSelect={(s) => setQuery(s.label)}
+        placeholder="Buscar institución por nombre…"
+      />
+
       {isLoading && <TableSkeleton rows={5} />}
 
       {!isLoading && instituciones.length === 0 && (
@@ -181,10 +209,14 @@ function InstitucionesContent() {
         />
       )}
 
-      {!isLoading && instituciones.length > 0 && (
+      {!isLoading && instituciones.length > 0 && filtradas.length === 0 && (
+        <EmptyState icon="search-off" title="Sin resultados" description={`No hay instituciones que coincidan con "${query}".`} />
+      )}
+
+      {!isLoading && filtradas.length > 0 && (
         <ResponsiveTable
           columns={columns}
-          data={instituciones}
+          data={filtradas}
           keyExtractor={(i) => i.id ?? ''}
           rowActions={rowActions}
         />
@@ -250,7 +282,7 @@ function InstitucionFormModal({
     },
   });
 
-  useMemo(() => {
+  useEffect(() => {
     reset({
       nombre: initial?.nombre ?? '',
       activa: initial?.activa ?? true,

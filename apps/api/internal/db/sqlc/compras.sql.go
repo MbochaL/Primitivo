@@ -9,7 +9,61 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const listComprasEnRango = `-- name: ListComprasEnRango :many
+SELECT
+    c.id, c.cliente_id, c.usuario_id, c.subtotal, c.descuento, c.total, c.fecha,
+    cl.nombre AS cliente_nombre,
+    cl.dni    AS cliente_dni
+FROM compras c
+JOIN clientes cl ON cl.id = c.cliente_id
+WHERE c.fecha >= $1 AND c.fecha < $2
+ORDER BY c.fecha DESC
+`
+
+type ListComprasEnRangoRow struct {
+	ID             uuid.UUID          `json:"id"`
+	ClienteID      uuid.UUID          `json:"cliente_id"`
+	UsuarioID      uuid.UUID          `json:"usuario_id"`
+	Subtotal       int32              `json:"subtotal"`
+	Descuento      int32              `json:"descuento"`
+	Total          int32              `json:"total"`
+	Fecha          pgtype.Timestamptz `json:"fecha"`
+	ClienteNombre  string             `json:"cliente_nombre"`
+	ClienteDni     string             `json:"cliente_dni"`
+}
+
+func (q *Queries) ListComprasEnRango(ctx context.Context, desde, hasta pgtype.Timestamptz) ([]ListComprasEnRangoRow, error) {
+	rows, err := q.db.Query(ctx, listComprasEnRango, desde, hasta)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListComprasEnRangoRow{}
+	for rows.Next() {
+		var i ListComprasEnRangoRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClienteID,
+			&i.UsuarioID,
+			&i.Subtotal,
+			&i.Descuento,
+			&i.Total,
+			&i.Fecha,
+			&i.ClienteNombre,
+			&i.ClienteDni,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const createCompra = `-- name: CreateCompra :one
 INSERT INTO compras (cliente_id, usuario_id, subtotal, descuento, total)

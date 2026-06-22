@@ -19,6 +19,8 @@ import {
   Icon,
   Label,
   Screen,
+  SearchBar,
+  type SearchSuggestion,
   TableSkeleton,
   TextField,
   theme,
@@ -26,7 +28,7 @@ import {
   useToast,
 } from '@primitivo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
@@ -59,16 +61,23 @@ const beneficioSchema = z.object({
 });
 type BeneficioForm = z.infer<typeof beneficioSchema>;
 
-const condicionSchema = z.object({
-  umbral_infusiones: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
-  tipo_descuento: z.enum([
-    dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
-    dto_CrearCondicionRequest.tipo_descuento.MONTO_FIJO,
-  ]),
-  valor_descuento: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
-  reinicia_contador: z.boolean().default(false),
-  vigente: z.boolean().default(true),
-});
+const condicionSchema = z
+  .object({
+    umbral_infusiones: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
+    tipo_descuento: z.enum([
+      dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
+      dto_CrearCondicionRequest.tipo_descuento.MONTO_FIJO,
+    ]),
+    valor_descuento: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
+    reinicia_contador: z.boolean().default(false),
+    vigente: z.boolean().default(true),
+  })
+  .refine(
+    (d) =>
+      d.tipo_descuento !== dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE ||
+      d.valor_descuento <= 100,
+    { message: 'El porcentaje no puede superar 100', path: ['valor_descuento'] },
+  );
 type CondicionForm = z.infer<typeof condicionSchema>;
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -101,6 +110,30 @@ export default function BeneficiosScreen() {
   });
 
   const loading = loadingBeneficios || loadingInstituciones;
+
+  // ── búsqueda ──────────────────────────────────────────────────────────────
+  const [query, setQuery] = useState('');
+
+  const filtrados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return beneficios;
+    return beneficios.filter(
+      (b) =>
+        b.nombre?.toLowerCase().includes(q) ||
+        b.institucion_nombre?.toLowerCase().includes(q),
+    );
+  }, [beneficios, query]);
+
+  const suggestions = useMemo<SearchSuggestion[]>(() => {
+    return filtrados.slice(0, 8).map((b) => ({
+      id: b.id ?? '',
+      label: b.nombre ?? '',
+      sublabel: b.institucion_nombre,
+      meta: b.condiciones?.length ? `${b.condiciones.length} cond.` : undefined,
+      icon: 'loyalty' as const,
+      inactive: !b.activo,
+    }));
+  }, [filtrados]);
 
   // ── mutations ─────────────────────────────────────────────────────────────
   const crearBeneficio = useMutation({
@@ -194,6 +227,14 @@ export default function BeneficiosScreen() {
         )}
       </View>
 
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        suggestions={suggestions}
+        onSelect={(s) => setQuery(s.label)}
+        placeholder="Buscar beneficio por nombre o institución…"
+      />
+
       {loading && (
         <View style={styles.skeletonWrap}>
           <TableSkeleton rows={4} />
@@ -215,8 +256,12 @@ export default function BeneficiosScreen() {
         />
       )}
 
+      {!loading && beneficios.length > 0 && filtrados.length === 0 && (
+        <EmptyState icon="search-off" title="Sin resultados" description={`No hay beneficios que coincidan con "${query}".`} />
+      )}
+
       {!loading &&
-        beneficios.map((b) => (
+        filtrados.map((b) => (
           <BeneficioCard
             key={b.id}
             beneficio={b}
@@ -348,52 +393,56 @@ function BeneficioCard({
           </Caption>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.condTableHeader}>
-              <Caption style={[styles.condCell, styles.condCellUmbral]}>Umbral</Caption>
-              <Caption style={[styles.condCell, styles.condCellTipo]}>Tipo</Caption>
-              <Caption style={[styles.condCell, styles.condCellValor]}>Valor</Caption>
-              <Caption style={[styles.condCell, styles.condCellReinicia]}>Reinicia</Caption>
-              <Caption style={[styles.condCell, styles.condCellVigente]}>Vigente</Caption>
-              {esAdmin && <View style={styles.condCellAction} />}
-            </View>
-            {sortedConds.map((c) => (
-              <View key={c.id} style={styles.condRow}>
-                <Body style={[styles.condCell, styles.condCellUmbral]}>
-                  {c.umbral_infusiones ?? 0} inf.
-                </Body>
-                <Body style={[styles.condCell, styles.condCellTipo]}>
-                  {c.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto fijo'}
-                </Body>
-                <Body style={[styles.condCell, styles.condCellValor]}>
-                  {formatDescuento(c.tipo_descuento, c.valor_descuento)}
-                </Body>
-                <View style={[styles.condCellReinicia, styles.condCell]}>
-                  <Icon
-                    name={c.reinicia_contador ? 'check-circle' : 'radio-button-unchecked'}
-                    size={16}
-                    color={
-                      c.reinicia_contador ? theme.colors.success : theme.colors.outlineVariant
-                    }
-                  />
-                </View>
-                <View style={[styles.condCellVigente, styles.condCell]}>
-                  <Icon
-                    name={c.vigente ? 'check-circle' : 'cancel'}
-                    size={16}
-                    color={c.vigente ? theme.colors.success : theme.colors.danger}
-                  />
-                </View>
-                {esAdmin && (
-                  <Pressable
-                    style={styles.condCellAction}
-                    onPress={() => onEditarCondicion(c)}
-                    accessibilityLabel="Editar condición"
-                  >
-                    <Icon name="edit" size={16} color={theme.colors.onSurfaceVariant} />
-                  </Pressable>
-                )}
+            {/* Wrapper en columna: el ScrollView horizontal pone sus hijos en fila,
+                este View los apila verticalmente para que header y filas se vean bien. */}
+            <View>
+              <View style={styles.condTableHeader}>
+                <Caption style={[styles.condCell, styles.condCellUmbral]}>Umbral</Caption>
+                <Caption style={[styles.condCell, styles.condCellTipo]}>Tipo</Caption>
+                <Caption style={[styles.condCell, styles.condCellValor]}>Valor</Caption>
+                <Caption style={[styles.condCell, styles.condCellReinicia]}>Reinicia</Caption>
+                <Caption style={[styles.condCell, styles.condCellVigente]}>Vigente</Caption>
+                {esAdmin && <View style={styles.condCellAction} />}
               </View>
-            ))}
+              {sortedConds.map((c) => (
+                <View key={c.id} style={styles.condRow}>
+                  <Body style={[styles.condCell, styles.condCellUmbral]}>
+                    {c.umbral_infusiones ?? 0} inf.
+                  </Body>
+                  <Body style={[styles.condCell, styles.condCellTipo]}>
+                    {c.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto fijo'}
+                  </Body>
+                  <Body style={[styles.condCell, styles.condCellValor]}>
+                    {formatDescuento(c.tipo_descuento, c.valor_descuento)}
+                  </Body>
+                  <View style={[styles.condCellReinicia, styles.condCell]}>
+                    <Icon
+                      name={c.reinicia_contador ? 'check-circle' : 'radio-button-unchecked'}
+                      size={16}
+                      color={
+                        c.reinicia_contador ? theme.colors.success : theme.colors.outlineVariant
+                      }
+                    />
+                  </View>
+                  <View style={[styles.condCellVigente, styles.condCell]}>
+                    <Icon
+                      name={c.vigente ? 'check-circle' : 'cancel'}
+                      size={16}
+                      color={c.vigente ? theme.colors.success : theme.colors.danger}
+                    />
+                  </View>
+                  {esAdmin && (
+                    <Pressable
+                      style={styles.condCellAction}
+                      onPress={() => onEditarCondicion(c)}
+                      accessibilityLabel="Editar condición"
+                    >
+                      <Icon name="edit" size={16} color={theme.colors.onSurfaceVariant} />
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+            </View>
           </ScrollView>
         )}
 
@@ -443,7 +492,7 @@ function BeneficioFormModal({
     },
   });
 
-  useMemo(() => {
+  useEffect(() => {
     reset({
       institucion_id: initial?.institucion_id ?? '',
       nombre: initial?.nombre ?? '',
@@ -567,7 +616,7 @@ function CondicionFormModal({
     },
   });
 
-  useMemo(() => {
+  useEffect(() => {
     reset({
       umbral_infusiones: initial?.umbral_infusiones ?? 0,
       tipo_descuento:
@@ -645,8 +694,16 @@ function CondicionFormModal({
         name="valor_descuento"
         render={({ field }) => (
           <TextField
-            label="Valor del descuento"
-            placeholder="0"
+            label={
+              watch('tipo_descuento') === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE
+                ? 'Porcentaje (0–100)'
+                : 'Monto fijo ($)'
+            }
+            placeholder={
+              watch('tipo_descuento') === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE
+                ? '10'
+                : '500'
+            }
             value={String(field.value)}
             onChangeText={(v) => field.onChange(isNaN(Number(v)) ? 0 : Number(v))}
             keyboardType="numeric"
