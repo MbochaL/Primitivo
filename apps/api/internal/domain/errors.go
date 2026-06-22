@@ -23,6 +23,8 @@ var (
 	ErrDNIYaRegistrado        = errors.New("ya existe un cliente con ese DNI")
 	ErrProductoNoEncontrado   = errors.New("producto no encontrado")
 	ErrCategoriaNoEncontrada  = errors.New("categoría no encontrada")
+	ErrBeneficioNoEncontrado  = errors.New("beneficio no encontrado")
+	ErrCondicionNoEncontrada  = errors.New("condición no encontrada")
 	ErrBeneficioNoDisponible  = errors.New("el beneficio no está disponible para el cliente")
 	ErrUmbralNoAlcanzado      = errors.New("el cliente no alcanzó el umbral de la condición")
 	ErrCompraSinItems         = errors.New("la compra no tiene items")

@@ -301,3 +301,72 @@ func uuidPtrToString(id *uuid.UUID) *string {
 	s := id.String()
 	return &s
 }
+
+// ── Beneficios admin ─────────────────────────────────────────────────────────
+
+// CondicionResponse expone los campos de una condición.
+type CondicionResponse struct {
+	ID               string `json:"id"`
+	BeneficioID      string `json:"beneficio_id"`
+	UmbralInfusiones int    `json:"umbral_infusiones"`
+	TipoDescuento    string `json:"tipo_descuento"`
+	ValorDescuento   int    `json:"valor_descuento"`
+	ReiniciaContador bool   `json:"reinicia_contador"`
+	Vigente          bool   `json:"vigente"`
+}
+
+// BeneficioAdminResponse expone el beneficio con su institución y condiciones (admin).
+type BeneficioAdminResponse struct {
+	ID                string              `json:"id"`
+	InstitucionID     string              `json:"institucion_id"`
+	InstitucionNombre string              `json:"institucion_nombre"`
+	Nombre            string              `json:"nombre"`
+	Activo            bool                `json:"activo"`
+	Condiciones       []CondicionResponse `json:"condiciones"`
+}
+
+// ToBeneficioAdminResponse mapea un BeneficioConDetalle a su DTO.
+func ToBeneficioAdminResponse(b domain.BeneficioConDetalle) BeneficioAdminResponse {
+	conds := make([]CondicionResponse, 0, len(b.Condiciones))
+	for _, c := range b.Condiciones {
+		conds = append(conds, CondicionResponse{
+			ID:               c.ID.String(),
+			BeneficioID:      c.BeneficioID.String(),
+			UmbralInfusiones: c.UmbralInfusiones,
+			TipoDescuento:    c.TipoDescuento,
+			ValorDescuento:   c.ValorDescuento,
+			ReiniciaContador: c.ReiniciaContador,
+			Vigente:          c.Vigente,
+		})
+	}
+	return BeneficioAdminResponse{
+		ID:                b.ID.String(),
+		InstitucionID:     b.InstitucionID.String(),
+		InstitucionNombre: b.InstitucionNombre,
+		Nombre:            b.Nombre,
+		Activo:            b.Activo,
+		Condiciones:       conds,
+	}
+}
+
+// ToBeneficiosAdminResponse mapea un slice de beneficios.
+func ToBeneficiosAdminResponse(bs []domain.BeneficioConDetalle) []BeneficioAdminResponse {
+	out := make([]BeneficioAdminResponse, 0, len(bs))
+	for _, b := range bs {
+		out = append(out, ToBeneficioAdminResponse(b))
+	}
+	return out
+}
+
+// ToCondicionResponse mapea una condición a su DTO.
+func ToCondicionResponse(c domain.Condicion) CondicionResponse {
+	return CondicionResponse{
+		ID:               c.ID.String(),
+		BeneficioID:      c.BeneficioID.String(),
+		UmbralInfusiones: c.UmbralInfusiones,
+		TipoDescuento:    c.TipoDescuento,
+		ValorDescuento:   c.ValorDescuento,
+		ReiniciaContador: c.ReiniciaContador,
+		Vigente:          c.Vigente,
+	}
+}

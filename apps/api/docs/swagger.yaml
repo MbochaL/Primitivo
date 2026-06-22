@@ -1,5 +1,17 @@
 basePath: /api/v1
 definitions:
+  dto.ActualizarBeneficioRequest:
+    properties:
+      activo:
+        type: boolean
+      institucion_id:
+        type: string
+      nombre:
+        type: string
+    required:
+    - institucion_id
+    - nombre
+    type: object
   dto.ActualizarCategoriaRequest:
     properties:
       nombre:
@@ -25,6 +37,26 @@ definitions:
         type: string
     required:
     - nombre
+    type: object
+  dto.ActualizarCondicionRequest:
+    properties:
+      reinicia_contador:
+        type: boolean
+      tipo_descuento:
+        enum:
+        - porcentaje
+        - monto_fijo
+        type: string
+      umbral_infusiones:
+        minimum: 0
+        type: integer
+      valor_descuento:
+        minimum: 0
+        type: integer
+      vigente:
+        type: boolean
+    required:
+    - tipo_descuento
     type: object
   dto.ActualizarInstitucionRequest:
     properties:
@@ -70,6 +102,23 @@ definitions:
     - activo
     - email
     - rol
+    type: object
+  dto.BeneficioAdminResponse:
+    properties:
+      activo:
+        type: boolean
+      condiciones:
+        items:
+          $ref: '#/definitions/dto.CondicionResponse'
+        type: array
+      id:
+        type: string
+      institucion_id:
+        type: string
+      institucion_nombre:
+        type: string
+      nombre:
+        type: string
     type: object
   dto.BeneficioDisponibleResponse:
     properties:
@@ -157,6 +206,33 @@ definitions:
       total:
         type: integer
     type: object
+  dto.CondicionResponse:
+    properties:
+      beneficio_id:
+        type: string
+      id:
+        type: string
+      reinicia_contador:
+        type: boolean
+      tipo_descuento:
+        type: string
+      umbral_infusiones:
+        type: integer
+      valor_descuento:
+        type: integer
+      vigente:
+        type: boolean
+    type: object
+  dto.CrearBeneficioRequest:
+    properties:
+      institucion_id:
+        type: string
+      nombre:
+        type: string
+    required:
+    - institucion_id
+    - nombre
+    type: object
   dto.CrearCategoriaRequest:
     properties:
       nombre:
@@ -185,6 +261,26 @@ definitions:
     required:
     - dni
     - nombre
+    type: object
+  dto.CrearCondicionRequest:
+    properties:
+      reinicia_contador:
+        type: boolean
+      tipo_descuento:
+        enum:
+        - porcentaje
+        - monto_fijo
+        type: string
+      umbral_infusiones:
+        minimum: 0
+        type: integer
+      valor_descuento:
+        minimum: 0
+        type: integer
+      vigente:
+        type: boolean
+    required:
+    - tipo_descuento
     type: object
   dto.CrearInstitucionRequest:
     properties:
@@ -421,6 +517,119 @@ paths:
       summary: Renovar tokens
       tags:
       - auth
+  /beneficios:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.BeneficioAdminResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar beneficios con sus condiciones e institución (admin)
+      tags:
+      - beneficios
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Beneficio
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrearBeneficioRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BeneficioAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Crear beneficio (admin)
+      tags:
+      - beneficios
+  /beneficios/{id}:
+    delete:
+      parameters:
+      - description: ID beneficio
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BeneficioAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Desactivar beneficio (admin)
+      tags:
+      - beneficios
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID beneficio
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Beneficio
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActualizarBeneficioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BeneficioAdminResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar beneficio (admin)
+      tags:
+      - beneficios
+  /beneficios/{id}/condiciones:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID beneficio
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Condición
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrearCondicionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CondicionResponse'
+      security:
+      - BearerAuth: []
+      summary: Agregar condición a un beneficio (admin)
+      tags:
+      - beneficios
   /categorias:
     get:
       produces:
@@ -676,6 +885,34 @@ paths:
       summary: Registrar una compra (calcula total y aplica beneficio si corresponde)
       tags:
       - compras
+  /condiciones/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID condición
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Condición
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActualizarCondicionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CondicionResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar condición (admin)
+      tags:
+      - beneficios
   /health:
     get:
       produces:

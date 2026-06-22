@@ -63,6 +63,7 @@ func main() {
 	clienteRepo := postgres.NewClienteRepo(pool)
 	menuRepo := postgres.NewMenuRepo(pool)
 	compraRepo := postgres.NewCompraRepo(pool)
+	beneficioRepo := postgres.NewBeneficioRepo(pool)
 
 	authService := service.NewAuthService(usuarioRepo, jwtManager)
 	usuarioService := service.NewUsuarioService(usuarioRepo)
@@ -70,6 +71,7 @@ func main() {
 	clienteService := service.NewClienteService(clienteRepo)
 	menuService := service.NewMenuService(menuRepo)
 	compraService := service.NewCompraService(compraRepo)
+	beneficioService := service.NewBeneficioService(beneficioRepo)
 
 	handlers := router.Handlers{
 		Health:      handler.NewHealthHandler(pool),
@@ -79,6 +81,7 @@ func main() {
 		Cliente:     handler.NewClienteHandler(clienteService),
 		Menu:        handler.NewMenuHandler(menuService),
 		Compra:      handler.NewCompraHandler(compraService),
+		Beneficio:   handler.NewBeneficioHandler(beneficioService),
 	}
 
 	engine := router.New(cfg, jwtManager, handlers)

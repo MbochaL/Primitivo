@@ -11,6 +11,43 @@ import (
 	"github.com/google/uuid"
 )
 
+const createCondicion = `-- name: CreateCondicion :one
+INSERT INTO condiciones (beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente
+`
+
+type CreateCondicionParams struct {
+	BeneficioID      uuid.UUID `json:"beneficio_id"`
+	UmbralInfusiones int32     `json:"umbral_infusiones"`
+	TipoDescuento    string    `json:"tipo_descuento"`
+	ValorDescuento   int32     `json:"valor_descuento"`
+	ReiniciaContador bool      `json:"reinicia_contador"`
+	Vigente          bool      `json:"vigente"`
+}
+
+func (q *Queries) CreateCondicion(ctx context.Context, arg CreateCondicionParams) (Condicione, error) {
+	row := q.db.QueryRow(ctx, createCondicion,
+		arg.BeneficioID,
+		arg.UmbralInfusiones,
+		arg.TipoDescuento,
+		arg.ValorDescuento,
+		arg.ReiniciaContador,
+		arg.Vigente,
+	)
+	var i Condicione
+	err := row.Scan(
+		&i.ID,
+		&i.BeneficioID,
+		&i.UmbralInfusiones,
+		&i.TipoDescuento,
+		&i.ValorDescuento,
+		&i.ReiniciaContador,
+		&i.Vigente,
+	)
+	return i, err
+}
+
 const getCondicionParaCanje = `-- name: GetCondicionParaCanje :one
 SELECT
     c.id,
@@ -54,6 +91,40 @@ func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetC
 		&i.BeneficioActivo,
 	)
 	return i, err
+}
+
+const listCondicionesPorBeneficio = `-- name: ListCondicionesPorBeneficio :many
+SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente FROM condiciones
+WHERE beneficio_id = $1
+ORDER BY umbral_infusiones ASC
+`
+
+func (q *Queries) ListCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) ([]Condicione, error) {
+	rows, err := q.db.Query(ctx, listCondicionesPorBeneficio, beneficioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Condicione{}
+	for rows.Next() {
+		var i Condicione
+		if err := rows.Scan(
+			&i.ID,
+			&i.BeneficioID,
+			&i.UmbralInfusiones,
+			&i.TipoDescuento,
+			&i.ValorDescuento,
+			&i.ReiniciaContador,
+			&i.Vigente,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listCondicionesPorInstitucion = `-- name: ListCondicionesPorInstitucion :many
@@ -106,4 +177,79 @@ func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucion
 		return nil, err
 	}
 	return items, nil
+}
+
+const listTodasCondiciones = `-- name: ListTodasCondiciones :many
+SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente FROM condiciones
+ORDER BY beneficio_id, umbral_infusiones ASC
+`
+
+func (q *Queries) ListTodasCondiciones(ctx context.Context) ([]Condicione, error) {
+	rows, err := q.db.Query(ctx, listTodasCondiciones)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Condicione{}
+	for rows.Next() {
+		var i Condicione
+		if err := rows.Scan(
+			&i.ID,
+			&i.BeneficioID,
+			&i.UmbralInfusiones,
+			&i.TipoDescuento,
+			&i.ValorDescuento,
+			&i.ReiniciaContador,
+			&i.Vigente,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateCondicion = `-- name: UpdateCondicion :one
+UPDATE condiciones
+SET umbral_infusiones = $2,
+    tipo_descuento    = $3,
+    valor_descuento   = $4,
+    reinicia_contador = $5,
+    vigente           = $6
+WHERE id = $1
+RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente
+`
+
+type UpdateCondicionParams struct {
+	ID               uuid.UUID `json:"id"`
+	UmbralInfusiones int32     `json:"umbral_infusiones"`
+	TipoDescuento    string    `json:"tipo_descuento"`
+	ValorDescuento   int32     `json:"valor_descuento"`
+	ReiniciaContador bool      `json:"reinicia_contador"`
+	Vigente          bool      `json:"vigente"`
+}
+
+func (q *Queries) UpdateCondicion(ctx context.Context, arg UpdateCondicionParams) (Condicione, error) {
+	row := q.db.QueryRow(ctx, updateCondicion,
+		arg.ID,
+		arg.UmbralInfusiones,
+		arg.TipoDescuento,
+		arg.ValorDescuento,
+		arg.ReiniciaContador,
+		arg.Vigente,
+	)
+	var i Condicione
+	err := row.Scan(
+		&i.ID,
+		&i.BeneficioID,
+		&i.UmbralInfusiones,
+		&i.TipoDescuento,
+		&i.ValorDescuento,
+		&i.ReiniciaContador,
+		&i.Vigente,
+	)
+	return i, err
 }

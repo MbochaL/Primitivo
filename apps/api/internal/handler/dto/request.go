@@ -106,3 +106,36 @@ type ActualizarProductoRequest struct {
 	EsInfusion  bool   `json:"es_infusion"`
 	Activo      bool   `json:"activo"`
 }
+
+// ── Beneficios admin ─────────────────────────────────────────────────────────
+
+// CrearBeneficioRequest es el cuerpo de POST /beneficios.
+type CrearBeneficioRequest struct {
+	InstitucionID string `json:"institucion_id" binding:"required,uuid"`
+	Nombre        string `json:"nombre" binding:"required"`
+}
+
+// ActualizarBeneficioRequest es el cuerpo de PUT /beneficios/:id.
+type ActualizarBeneficioRequest struct {
+	InstitucionID string `json:"institucion_id" binding:"required,uuid"`
+	Nombre        string `json:"nombre" binding:"required"`
+	Activo        bool   `json:"activo"`
+}
+
+// CrearCondicionRequest es el cuerpo de POST /beneficios/:id/condiciones.
+type CrearCondicionRequest struct {
+	UmbralInfusiones int    `json:"umbral_infusiones" binding:"min=0"`
+	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo"`
+	ValorDescuento   int    `json:"valor_descuento" binding:"min=0"`
+	ReiniciaContador bool   `json:"reinicia_contador"`
+	Vigente          *bool  `json:"vigente"`
+}
+
+// ActualizarCondicionRequest es el cuerpo de PUT /condiciones/:id.
+type ActualizarCondicionRequest struct {
+	UmbralInfusiones int    `json:"umbral_infusiones" binding:"min=0"`
+	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo"`
+	ValorDescuento   int    `json:"valor_descuento" binding:"min=0"`
+	ReiniciaContador bool   `json:"reinicia_contador"`
+	Vigente          bool   `json:"vigente"`
+}

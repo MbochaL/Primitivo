@@ -61,6 +61,18 @@ type MenuRepository interface {
 	DesactivarProducto(ctx context.Context, id uuid.UUID) (domain.Producto, error)
 }
 
+// BeneficioRepository abstrae la persistencia de beneficios y condiciones (CRUD admin).
+type BeneficioRepository interface {
+	ListBeneficios(ctx context.Context) ([]domain.BeneficioConDetalle, error)
+	GetBeneficio(ctx context.Context, id uuid.UUID) (domain.BeneficioConDetalle, error)
+	CrearBeneficio(ctx context.Context, n domain.NuevoBeneficio) (domain.Beneficio, error)
+	ActualizarBeneficio(ctx context.Context, u domain.ActualizarBeneficioInput) (domain.Beneficio, error)
+	DesactivarBeneficio(ctx context.Context, id uuid.UUID) (domain.Beneficio, error)
+
+	CrearCondicion(ctx context.Context, n domain.NuevaCondicion) (domain.Condicion, error)
+	ActualizarCondicion(ctx context.Context, u domain.ActualizarCondicionInput) (domain.Condicion, error)
+}
+
 // CompraRepository registra ventas dentro de una transacción (el corazón del sistema).
 type CompraRepository interface {
 	RegistrarCompra(ctx context.Context, n domain.NuevaCompra) (domain.Compra, error)

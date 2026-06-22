@@ -109,6 +109,196 @@
                 }
             }
         },
+        "/beneficios": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Listar beneficios con sus condiciones e institución (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/dto.BeneficioAdminResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Crear beneficio (admin)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearBeneficioRequest"
+                            }
+                        }
+                    },
+                    "description": "Beneficio",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.BeneficioAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/beneficios/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Actualizar beneficio (admin)",
+                "parameters": [
+                    {
+                        "description": "ID beneficio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarBeneficioRequest"
+                            }
+                        }
+                    },
+                    "description": "Beneficio",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.BeneficioAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Desactivar beneficio (admin)",
+                "parameters": [
+                    {
+                        "description": "ID beneficio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.BeneficioAdminResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/beneficios/{id}/condiciones": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Agregar condición a un beneficio (admin)",
+                "parameters": [
+                    {
+                        "description": "ID beneficio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.CrearCondicionRequest"
+                            }
+                        }
+                    },
+                    "description": "Condición",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.CondicionResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/categorias": {
             "get": {
                 "security": [
@@ -558,6 +748,53 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/response.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/condiciones/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "beneficios"
+                ],
+                "summary": "Actualizar condición (admin)",
+                "parameters": [
+                    {
+                        "description": "ID condición",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/dto.ActualizarCondicionRequest"
+                            }
+                        }
+                    },
+                    "description": "Condición",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/dto.CondicionResponse"
                                 }
                             }
                         }
@@ -1119,6 +1356,24 @@
             }
         },
         "schemas": {
+            "dto.ActualizarBeneficioRequest": {
+                "type": "object",
+                "required": [
+                    "institucion_id",
+                    "nombre"
+                ],
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
             "dto.ActualizarCategoriaRequest": {
                 "type": "object",
                 "required": [
@@ -1155,6 +1410,35 @@
                     },
                     "nombre": {
                         "type": "string"
+                    }
+                }
+            },
+            "dto.ActualizarCondicionRequest": {
+                "type": "object",
+                "required": [
+                    "tipo_descuento"
+                ],
+                "properties": {
+                    "reinicia_contador": {
+                        "type": "boolean"
+                    },
+                    "tipo_descuento": {
+                        "type": "string",
+                        "enum": [
+                            "porcentaje",
+                            "monto_fijo"
+                        ]
+                    },
+                    "umbral_infusiones": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "valor_descuento": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "vigente": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -1221,6 +1505,32 @@
                             "administrador",
                             "operador"
                         ]
+                    }
+                }
+            },
+            "dto.BeneficioAdminResponse": {
+                "type": "object",
+                "properties": {
+                    "activo": {
+                        "type": "boolean"
+                    },
+                    "condiciones": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/dto.CondicionResponse"
+                        }
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "institucion_nombre": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
                     }
                 }
             },
@@ -1356,6 +1666,47 @@
                     }
                 }
             },
+            "dto.CondicionResponse": {
+                "type": "object",
+                "properties": {
+                    "beneficio_id": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "reinicia_contador": {
+                        "type": "boolean"
+                    },
+                    "tipo_descuento": {
+                        "type": "string"
+                    },
+                    "umbral_infusiones": {
+                        "type": "integer"
+                    },
+                    "valor_descuento": {
+                        "type": "integer"
+                    },
+                    "vigente": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "dto.CrearBeneficioRequest": {
+                "type": "object",
+                "required": [
+                    "institucion_id",
+                    "nombre"
+                ],
+                "properties": {
+                    "institucion_id": {
+                        "type": "string"
+                    },
+                    "nombre": {
+                        "type": "string"
+                    }
+                }
+            },
             "dto.CrearCategoriaRequest": {
                 "type": "object",
                 "required": [
@@ -1396,6 +1747,35 @@
                     },
                     "nombre": {
                         "type": "string"
+                    }
+                }
+            },
+            "dto.CrearCondicionRequest": {
+                "type": "object",
+                "required": [
+                    "tipo_descuento"
+                ],
+                "properties": {
+                    "reinicia_contador": {
+                        "type": "boolean"
+                    },
+                    "tipo_descuento": {
+                        "type": "string",
+                        "enum": [
+                            "porcentaje",
+                            "monto_fijo"
+                        ]
+                    },
+                    "umbral_infusiones": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "valor_descuento": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "vigente": {
+                        "type": "boolean"
                     }
                 }
             },

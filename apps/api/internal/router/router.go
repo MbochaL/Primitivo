@@ -20,6 +20,7 @@ type Handlers struct {
 	Cliente     *handler.ClienteHandler
 	Menu        *handler.MenuHandler
 	Compra      *handler.CompraHandler
+	Beneficio   *handler.BeneficioHandler
 }
 
 // New construye el motor Gin con sus middlewares globales y rutas registradas.
@@ -87,6 +88,14 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 				admin.POST("/productos", h.Menu.CrearProducto)
 				admin.PUT("/productos/:id", h.Menu.ActualizarProducto)
 				admin.DELETE("/productos/:id", h.Menu.DesactivarProducto)
+
+				// Beneficios y condiciones
+				admin.GET("/beneficios", h.Beneficio.List)
+				admin.POST("/beneficios", h.Beneficio.Crear)
+				admin.PUT("/beneficios/:id", h.Beneficio.Actualizar)
+				admin.DELETE("/beneficios/:id", h.Beneficio.Desactivar)
+				admin.POST("/beneficios/:id/condiciones", h.Beneficio.CrearCondicion)
+				admin.PUT("/condiciones/:id", h.Beneficio.ActualizarCondicion)
 			}
 		}
 	}
