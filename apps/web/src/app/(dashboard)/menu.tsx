@@ -35,6 +35,7 @@ import { z } from 'zod';
 
 import { useAuth } from '@/lib/auth';
 import { mensajeDeError } from '@/lib/errors';
+import { Redirect } from 'expo-router';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -78,6 +79,8 @@ export default function MenuScreen() {
   const toast = useToast();
   const { esAdmin } = useAuth();
   const { isMobile } = useBreakpoint();
+
+  if (!esAdmin) return <Redirect href="/clientes" />;
 
   const [catModal, setCatModal] = useState<{
     mode: 'crear' | 'editar';

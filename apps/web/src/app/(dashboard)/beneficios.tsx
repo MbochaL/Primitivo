@@ -35,6 +35,7 @@ import { z } from 'zod';
 
 import { useAuth } from '@/lib/auth';
 import { mensajeDeError } from '@/lib/errors';
+import { Redirect } from 'expo-router';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,8 @@ export default function BeneficiosScreen() {
   const qc = useQueryClient();
   const toast = useToast();
   const { esAdmin } = useAuth();
+
+  if (!esAdmin) return <Redirect href="/clientes" />;
 
   const [beneficioModal, setBeneficioModal] = useState<{
     mode: 'crear' | 'editar';

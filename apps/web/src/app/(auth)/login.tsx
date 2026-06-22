@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Caption, Screen, TextField, Title, theme } from '@primitivo/ui';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
@@ -17,8 +17,13 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, estado, esAdmin } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Si ya hay sesión activa, no tiene sentido mostrar el login.
+  if (estado === 'autenticado') {
+    return <Redirect href={esAdmin ? '/' : '/clientes'} />;
+  }
 
   const {
     control,
