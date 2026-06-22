@@ -3,5 +3,8 @@
   "framework": null,
   "installCommand": "npx pnpm@11.8.0 install --frozen-lockfile",
   "buildCommand": "npx pnpm@11.8.0 exec expo export --platform web",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

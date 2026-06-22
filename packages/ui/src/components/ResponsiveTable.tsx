@@ -21,6 +21,8 @@ interface Props<T> {
   data: T[];
   keyExtractor: (row: T) => string;
   onRowPress?: (row: T) => void;
+  /** Key de la fila actualmente seleccionada (resaltado visual). */
+  selectedKey?: string;
   /** Acciones por fila (editar/borrar). A la derecha en desktop, abajo en mobile. */
   rowActions?: (row: T) => ReactNode;
 }
@@ -30,7 +32,7 @@ interface Props<T> {
  * cada fila colapsa a una card con pares etiqueta/valor. Sin bordes verticales (estética
  * editorial).
  */
-export function ResponsiveTable<T>({ columns, data, keyExtractor, onRowPress, rowActions }: Props<T>) {
+export function ResponsiveTable<T>({ columns, data, keyExtractor, onRowPress, selectedKey, rowActions }: Props<T>) {
   const { isMobile } = useBreakpoint();
 
   if (isMobile) {
@@ -39,7 +41,7 @@ export function ResponsiveTable<T>({ columns, data, keyExtractor, onRowPress, ro
         {data.map((row) => (
           <Pressable
             key={keyExtractor(row)}
-            style={styles.card}
+            style={[styles.card, keyExtractor(row) === selectedKey && styles.cardSelected]}
             onPress={onRowPress ? () => onRowPress(row) : undefined}
           >
             {columns
@@ -70,7 +72,7 @@ export function ResponsiveTable<T>({ columns, data, keyExtractor, onRowPress, ro
       {data.map((row) => (
         <Pressable
           key={keyExtractor(row)}
-          style={styles.dataRow}
+          style={[styles.dataRow, keyExtractor(row) === selectedKey && styles.dataRowSelected]}
           onPress={onRowPress ? () => onRowPress(row) : undefined}
         >
           {columns.map((c) => (
@@ -110,6 +112,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.outlineVariant,
   },
+  dataRowSelected: { backgroundColor: theme.colors.surfaceVariant },
   actionsCol: { width: 96, alignItems: 'flex-end' },
   cards: { gap: theme.spacing.md },
   card: {
@@ -119,6 +122,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.gutter,
     gap: theme.spacing.sm,
     ...theme.shadows.ink,
+  },
+  cardSelected: {
+    backgroundColor: theme.colors.surfaceVariant,
   },
   cardRow: {
     flexDirection: 'row',
