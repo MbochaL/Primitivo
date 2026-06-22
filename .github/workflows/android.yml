@@ -1,0 +1,49 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prebuild Android
+        working-directory: apps/web
+        env:
+          EXPO_PUBLIC_API_URL: https://primitivo.onrender.com/api/v1
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build APK
+        working-directory: apps/web/android
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: primitivo-${{ github.run_number }}.apk
+          path: apps/web/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          retention-days: 30
