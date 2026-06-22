@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
     color: theme.colors.onSurface,
     textTransform: 'uppercase',
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
   heading: {
     fontFamily: theme.typography.fontFamily.headingMedium,
