@@ -202,11 +202,14 @@ const styles = StyleSheet.create({
 
   // Top bar (mobile)
   topbar: {
-    height: 64,
+    // minHeight en lugar de height fija: paddingTop: insets.top expande la barra
+    // sin cortar el contenido (en iOS notch top≈44, en Android top≈24).
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
     backgroundColor: theme.colors.surface,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.black,

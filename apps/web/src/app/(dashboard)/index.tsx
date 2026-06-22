@@ -194,13 +194,14 @@ function ReportesContent() {
       {/* ── Header ── */}
       <View style={[styles.pageHeader, isDesktop && styles.pageHeaderDesktop]}>
         <Title>Reportes</Title>
-        <View style={styles.exportBtns}>
+        <View style={[styles.exportBtns, !isDesktop && styles.exportBtnsMobile]}>
           <Button
             title="Exportar compras"
             icon="download"
             variant="secondary"
             onPress={exportComprasCSV}
             disabled={compras.length === 0}
+            fullWidth={!isDesktop}
           />
           <Button
             title="Exportar clientes"
@@ -208,6 +209,7 @@ function ReportesContent() {
             variant="secondary"
             onPress={exportClientesCSV}
             disabled={clientes.length === 0}
+            fullWidth={!isDesktop}
           />
         </View>
       </View>
@@ -439,20 +441,23 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     flexWrap: 'wrap',
   },
+  exportBtnsMobile: {
+    flexDirection: 'column',
+  },
 
   // Filtro
   filtroSection: { gap: theme.spacing.sm, marginBottom: theme.spacing.lg },
   filtroTitle:   { color: theme.colors.onSurfaceVariant, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1 },
   chipRow:       { flexDirection: 'row', gap: theme.spacing.sm },
   chip: {
-    paddingVertical:   theme.spacing.xs,
+    paddingVertical:   theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     borderWidth:   1,
     borderColor:   theme.colors.outlineVariant,
   },
   chipActive:     { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
-  chipText:       { color: theme.colors.onSurface },
-  chipTextActive: { color: theme.colors.white },
+  chipText:       { color: theme.colors.onSurface, fontSize: 13 },
+  chipTextActive: { color: theme.colors.white, fontSize: 13 },
   customRow:        { gap: theme.spacing.md },
   customRowDesktop: { flexDirection: 'row' },
   dateField: { gap: theme.spacing.xs, flex: 1 },
