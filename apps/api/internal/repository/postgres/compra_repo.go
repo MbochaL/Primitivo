@@ -3,8 +3,10 @@ package postgres
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,6 +24,14 @@ type CompraRepo struct {
 // NewCompraRepo recibe el pool para poder abrir transacciones.
 func NewCompraRepo(pool *pgxpool.Pool) *CompraRepo {
 	return &CompraRepo{pool: pool}
+}
+
+// itemInfo agrupa los datos de producto necesarios para calcular el descuento.
+type itemInfo struct {
+	productoID  uuid.UUID
+	categoriaID uuid.UUID
+	precio      int32
+	cantidad    int
 }
 
 func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) (domain.Compra, error) {
@@ -42,10 +52,10 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 		return domain.Compra{}, err
 	}
 
-	// 2. Subtotal con precios ACTUALES + conteo de infusiones compradas.
+	// 2. Cargar productos: subtotal + conteo de infusiones + datos para descuento.
 	subtotal := 0
 	infusiones := 0
-	precios := make([]int32, len(n.Items))
+	items := make([]itemInfo, len(n.Items))
 	for i, it := range n.Items {
 		p, err := q.GetProductoPorID(ctx, it.ProductoID)
 		if err != nil {
@@ -54,14 +64,19 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 			}
 			return domain.Compra{}, err
 		}
-		precios[i] = p.Precio
+		items[i] = itemInfo{
+			productoID:  p.ID,
+			categoriaID: p.CategoriaID,
+			precio:      p.Precio,
+			cantidad:    it.Cantidad,
+		}
 		subtotal += int(p.Precio) * it.Cantidad
 		if p.EsInfusion {
 			infusiones += it.Cantidad
 		}
 	}
 
-	// 3. Beneficio (opcional): validar y calcular descuento.
+	// 3. Beneficio (opcional): validar trigger y calcular descuento.
 	descuento := 0
 	var canje *sqlc.GetCondicionParaCanjeRow
 	if n.CondicionID != nil {
@@ -75,18 +90,74 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 		if !cond.Vigente || !cond.BeneficioActivo {
 			return domain.Compra{}, domain.ErrBeneficioNoDisponible
 		}
-		// El beneficio debe pertenecer a la institución del cliente.
 		if !cliente.InstitucionID.Valid || cliente.InstitucionID.UUID != cond.InstitucionID {
 			return domain.Compra{}, domain.ErrBeneficioNoDisponible
 		}
-		if int(cliente.ContadorInfusiones) < int(cond.UmbralInfusiones) {
-			return domain.Compra{}, domain.ErrUmbralNoAlcanzado
+
+		// Validar trigger.
+		switch cond.TipoTrigger {
+		case "siempre":
+			// siempre disponible
+
+		case "dias_semana":
+			weekday := int(time.Now().Weekday())
+			if !containsInt32(cond.DiasSemana, int32(weekday)) {
+				return domain.Compra{}, domain.ErrBeneficioNoDisponible
+			}
+
+		default: // "contador"
+			var count int
+			switch cond.ScopeTrigger {
+			case "categoria":
+				if !cond.ScopeTriggerCategoriaID.Valid {
+					return domain.Compra{}, domain.ErrBeneficioNoDisponible
+				}
+				catID := uuid.UUID(cond.ScopeTriggerCategoriaID.Bytes)
+				// Buscar último canje de esta condición para determinar desde cuándo contar.
+				desde, err := r.ultimoCanje(ctx, q, n.ClienteID, cond.ID, cond.ReiniciaContador)
+				if err != nil {
+					return domain.Compra{}, err
+				}
+				n32, err := q.ContarItemsPorClienteYCategoria(ctx, sqlc.ContarItemsPorClienteYCategoriaParams{
+					ClienteID:   n.ClienteID,
+					CategoriaID: catID,
+					Desde:       timePtrToPgtype(desde),
+				})
+				if err != nil {
+					return domain.Compra{}, err
+				}
+				count = int(n32)
+
+			case "producto":
+				if !cond.ScopeTriggerProductoID.Valid {
+					return domain.Compra{}, domain.ErrBeneficioNoDisponible
+				}
+				prodID := uuid.UUID(cond.ScopeTriggerProductoID.Bytes)
+				desde, err := r.ultimoCanje(ctx, q, n.ClienteID, cond.ID, cond.ReiniciaContador)
+				if err != nil {
+					return domain.Compra{}, err
+				}
+				n32, err := q.ContarItemsPorClienteYProducto(ctx, sqlc.ContarItemsPorClienteYProductoParams{
+					ClienteID:  n.ClienteID,
+					ProductoID: prodID,
+					Desde:      timePtrToPgtype(desde),
+				})
+				if err != nil {
+					return domain.Compra{}, err
+				}
+				count = int(n32)
+
+			default: // "infusiones"
+				count = int(cliente.ContadorInfusiones)
+			}
+
+			if count < int(cond.UmbralInfusiones) {
+				return domain.Compra{}, domain.ErrUmbralNoAlcanzado
+			}
 		}
-		if cond.TipoDescuento == "porcentaje" {
-			descuento = subtotal * int(cond.ValorDescuento) / 100
-		} else {
-			descuento = int(cond.ValorDescuento)
-		}
+
+		// Calcular descuento.
+		descuento = calcularDescuento(cond, items, subtotal)
 		if descuento > subtotal {
 			descuento = subtotal
 		}
@@ -112,7 +183,7 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 			CompraID:       compra.ID,
 			ProductoID:     it.ProductoID,
 			Cantidad:       int32(it.Cantidad),
-			PrecioUnitario: precios[i],
+			PrecioUnitario: items[i].precio,
 		}); err != nil {
 			return domain.Compra{}, err
 		}
@@ -131,9 +202,8 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 		}
 	}
 
-	// 5. Actualizar contador de infusiones: reinicia si el canje lo indica; si no, suma
-	//    las infusiones compradas.
-	if canje != nil && canje.ReiniciaContador {
+	// 5. Actualizar contador de infusiones (solo para scope_trigger='infusiones').
+	if canje != nil && canje.ReiniciaContador && canje.ScopeTrigger == "infusiones" {
 		if err := q.ReiniciarContadorInfusiones(ctx, n.ClienteID); err != nil {
 			return domain.Compra{}, err
 		}
@@ -184,4 +254,95 @@ func (r *CompraRepo) ListEnRango(ctx context.Context, desde, hasta time.Time) ([
 		})
 	}
 	return out, nil
+}
+
+// ── helpers privados ──────────────────────────────────────────────────────────
+
+// ultimoCanje obtiene la fecha del último canje de esta condición para el cliente.
+// Si reinicia_contador=false, devuelve nil (contar desde el inicio).
+func (r *CompraRepo) ultimoCanje(ctx context.Context, q *sqlc.Queries, clienteID, condicionID uuid.UUID, reinicia bool) (*time.Time, error) {
+	if !reinicia {
+		return nil, nil
+	}
+	ts, err := q.GetFechaUltimoCanjeCondicion(ctx, sqlc.GetFechaUltimoCanjeCondicionParams{
+		ClienteID:   clienteID,
+		CondicionID: condicionID,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !ts.Valid {
+		return nil, nil
+	}
+	t := ts.Time
+	return &t, nil
+}
+
+// calcularDescuento aplica la lógica de descuento según tipo y scope.
+func calcularDescuento(cond sqlc.GetCondicionParaCanjeRow, items []itemInfo, subtotal int) int {
+	switch cond.TipoDescuento {
+	case "porcentaje":
+		base := scopeSubtotal(cond, items, subtotal)
+		return base * int(cond.ValorDescuento) / 100
+
+	case "monto_fijo":
+		base := scopeSubtotal(cond, items, subtotal)
+		d := int(cond.ValorDescuento)
+		if d > base {
+			d = base
+		}
+		return d
+
+	case "producto_gratis":
+		if !cond.ScopeDescuentoCategoriaID.Valid {
+			return 0
+		}
+		catID := uuid.UUID(cond.ScopeDescuentoCategoriaID.Bytes)
+		// El producto más barato de esa categoría que está en el carrito es gratis (una unidad).
+		minPrice := math.MaxInt32
+		for _, it := range items {
+			if it.categoriaID == catID && int(it.precio) < minPrice {
+				minPrice = int(it.precio)
+			}
+		}
+		if minPrice == math.MaxInt32 {
+			return 0
+		}
+		return minPrice
+	}
+	return 0
+}
+
+// scopeSubtotal calcula el subtotal al que se aplica el descuento según scope_descuento.
+func scopeSubtotal(cond sqlc.GetCondicionParaCanjeRow, items []itemInfo, total int) int {
+	if cond.ScopeDescuento == "categoria" && cond.ScopeDescuentoCategoriaID.Valid {
+		catID := uuid.UUID(cond.ScopeDescuentoCategoriaID.Bytes)
+		s := 0
+		for _, it := range items {
+			if it.categoriaID == catID {
+				s += int(it.precio) * it.cantidad
+			}
+		}
+		return s
+	}
+	return total
+}
+
+func containsInt32(s []int32, v int32) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+func timePtrToPgtype(t *time.Time) pgtype.Timestamptz {
+	if t == nil {
+		return pgtype.Timestamptz{}
+	}
+	return pgtype.Timestamptz{Time: *t, Valid: true}
 }

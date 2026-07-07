@@ -9,21 +9,33 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createCondicion = `-- name: CreateCondicion :one
-INSERT INTO condiciones (beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente
+INSERT INTO condiciones (
+    beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente,
+    tipo_trigger, dias_semana, scope_trigger, scope_trigger_categoria_id, scope_trigger_producto_id,
+    scope_descuento, scope_descuento_categoria_id
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente, tipo_trigger, dias_semana, scope_trigger, scope_trigger_categoria_id, scope_trigger_producto_id, scope_descuento, scope_descuento_categoria_id
 `
 
 type CreateCondicionParams struct {
-	BeneficioID      uuid.UUID `json:"beneficio_id"`
-	UmbralInfusiones int32     `json:"umbral_infusiones"`
-	TipoDescuento    string    `json:"tipo_descuento"`
-	ValorDescuento   int32     `json:"valor_descuento"`
-	ReiniciaContador bool      `json:"reinicia_contador"`
-	Vigente          bool      `json:"vigente"`
+	BeneficioID               uuid.UUID   `json:"beneficio_id"`
+	UmbralInfusiones          int32       `json:"umbral_infusiones"`
+	TipoDescuento             string      `json:"tipo_descuento"`
+	ValorDescuento            int32       `json:"valor_descuento"`
+	ReiniciaContador          bool        `json:"reinicia_contador"`
+	Vigente                   bool        `json:"vigente"`
+	TipoTrigger               string      `json:"tipo_trigger"`
+	DiasSemana                []int32     `json:"dias_semana"`
+	ScopeTrigger              string      `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   pgtype.UUID `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string      `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
 }
 
 func (q *Queries) CreateCondicion(ctx context.Context, arg CreateCondicionParams) (Condicione, error) {
@@ -34,6 +46,13 @@ func (q *Queries) CreateCondicion(ctx context.Context, arg CreateCondicionParams
 		arg.ValorDescuento,
 		arg.ReiniciaContador,
 		arg.Vigente,
+		arg.TipoTrigger,
+		arg.DiasSemana,
+		arg.ScopeTrigger,
+		arg.ScopeTriggerCategoriaID,
+		arg.ScopeTriggerProductoID,
+		arg.ScopeDescuento,
+		arg.ScopeDescuentoCategoriaID,
 	)
 	var i Condicione
 	err := row.Scan(
@@ -44,6 +63,13 @@ func (q *Queries) CreateCondicion(ctx context.Context, arg CreateCondicionParams
 		&i.ValorDescuento,
 		&i.ReiniciaContador,
 		&i.Vigente,
+		&i.TipoTrigger,
+		&i.DiasSemana,
+		&i.ScopeTrigger,
+		&i.ScopeTriggerCategoriaID,
+		&i.ScopeTriggerProductoID,
+		&i.ScopeDescuento,
+		&i.ScopeDescuentoCategoriaID,
 	)
 	return i, err
 }
@@ -57,6 +83,13 @@ SELECT
     c.valor_descuento,
     c.reinicia_contador,
     c.vigente,
+    c.tipo_trigger,
+    c.dias_semana,
+    c.scope_trigger,
+    c.scope_trigger_categoria_id,
+    c.scope_trigger_producto_id,
+    c.scope_descuento,
+    c.scope_descuento_categoria_id,
     b.institucion_id,
     b.activo AS beneficio_activo
 FROM condiciones c
@@ -65,15 +98,22 @@ WHERE c.id = $1
 `
 
 type GetCondicionParaCanjeRow struct {
-	ID               uuid.UUID `json:"id"`
-	BeneficioID      uuid.UUID `json:"beneficio_id"`
-	UmbralInfusiones int32     `json:"umbral_infusiones"`
-	TipoDescuento    string    `json:"tipo_descuento"`
-	ValorDescuento   int32     `json:"valor_descuento"`
-	ReiniciaContador bool      `json:"reinicia_contador"`
-	Vigente          bool      `json:"vigente"`
-	InstitucionID    uuid.UUID `json:"institucion_id"`
-	BeneficioActivo  bool      `json:"beneficio_activo"`
+	ID                        uuid.UUID   `json:"id"`
+	BeneficioID               uuid.UUID   `json:"beneficio_id"`
+	UmbralInfusiones          int32       `json:"umbral_infusiones"`
+	TipoDescuento             string      `json:"tipo_descuento"`
+	ValorDescuento            int32       `json:"valor_descuento"`
+	ReiniciaContador          bool        `json:"reinicia_contador"`
+	Vigente                   bool        `json:"vigente"`
+	TipoTrigger               string      `json:"tipo_trigger"`
+	DiasSemana                []int32     `json:"dias_semana"`
+	ScopeTrigger              string      `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   pgtype.UUID `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string      `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
+	InstitucionID             uuid.UUID   `json:"institucion_id"`
+	BeneficioActivo           bool        `json:"beneficio_activo"`
 }
 
 func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error) {
@@ -87,6 +127,13 @@ func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetC
 		&i.ValorDescuento,
 		&i.ReiniciaContador,
 		&i.Vigente,
+		&i.TipoTrigger,
+		&i.DiasSemana,
+		&i.ScopeTrigger,
+		&i.ScopeTriggerCategoriaID,
+		&i.ScopeTriggerProductoID,
+		&i.ScopeDescuento,
+		&i.ScopeDescuentoCategoriaID,
 		&i.InstitucionID,
 		&i.BeneficioActivo,
 	)
@@ -94,7 +141,7 @@ func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetC
 }
 
 const listCondicionesPorBeneficio = `-- name: ListCondicionesPorBeneficio :many
-SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente FROM condiciones
+SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente, tipo_trigger, dias_semana, scope_trigger, scope_trigger_categoria_id, scope_trigger_producto_id, scope_descuento, scope_descuento_categoria_id FROM condiciones
 WHERE beneficio_id = $1
 ORDER BY umbral_infusiones ASC
 `
@@ -116,6 +163,13 @@ func (q *Queries) ListCondicionesPorBeneficio(ctx context.Context, beneficioID u
 			&i.ValorDescuento,
 			&i.ReiniciaContador,
 			&i.Vigente,
+			&i.TipoTrigger,
+			&i.DiasSemana,
+			&i.ScopeTrigger,
+			&i.ScopeTriggerCategoriaID,
+			&i.ScopeTriggerProductoID,
+			&i.ScopeDescuento,
+			&i.ScopeDescuentoCategoriaID,
 		); err != nil {
 			return nil, err
 		}
@@ -134,6 +188,13 @@ SELECT
     c.tipo_descuento,
     c.valor_descuento,
     c.reinicia_contador,
+    c.tipo_trigger,
+    c.dias_semana,
+    c.scope_trigger,
+    c.scope_trigger_categoria_id,
+    c.scope_trigger_producto_id,
+    c.scope_descuento,
+    c.scope_descuento_categoria_id,
     b.nombre AS beneficio_nombre
 FROM condiciones c
 JOIN beneficios b ON b.id = c.beneficio_id
@@ -144,12 +205,19 @@ ORDER BY c.umbral_infusiones ASC
 `
 
 type ListCondicionesPorInstitucionRow struct {
-	CondicionID      uuid.UUID `json:"condicion_id"`
-	UmbralInfusiones int32     `json:"umbral_infusiones"`
-	TipoDescuento    string    `json:"tipo_descuento"`
-	ValorDescuento   int32     `json:"valor_descuento"`
-	ReiniciaContador bool      `json:"reinicia_contador"`
-	BeneficioNombre  string    `json:"beneficio_nombre"`
+	CondicionID               uuid.UUID   `json:"condicion_id"`
+	UmbralInfusiones          int32       `json:"umbral_infusiones"`
+	TipoDescuento             string      `json:"tipo_descuento"`
+	ValorDescuento            int32       `json:"valor_descuento"`
+	ReiniciaContador          bool        `json:"reinicia_contador"`
+	TipoTrigger               string      `json:"tipo_trigger"`
+	DiasSemana                []int32     `json:"dias_semana"`
+	ScopeTrigger              string      `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   pgtype.UUID `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string      `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
+	BeneficioNombre           string      `json:"beneficio_nombre"`
 }
 
 func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error) {
@@ -167,6 +235,13 @@ func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucion
 			&i.TipoDescuento,
 			&i.ValorDescuento,
 			&i.ReiniciaContador,
+			&i.TipoTrigger,
+			&i.DiasSemana,
+			&i.ScopeTrigger,
+			&i.ScopeTriggerCategoriaID,
+			&i.ScopeTriggerProductoID,
+			&i.ScopeDescuento,
+			&i.ScopeDescuentoCategoriaID,
 			&i.BeneficioNombre,
 		); err != nil {
 			return nil, err
@@ -180,7 +255,7 @@ func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucion
 }
 
 const listTodasCondiciones = `-- name: ListTodasCondiciones :many
-SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente FROM condiciones
+SELECT id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente, tipo_trigger, dias_semana, scope_trigger, scope_trigger_categoria_id, scope_trigger_producto_id, scope_descuento, scope_descuento_categoria_id FROM condiciones
 ORDER BY beneficio_id, umbral_infusiones ASC
 `
 
@@ -201,6 +276,13 @@ func (q *Queries) ListTodasCondiciones(ctx context.Context) ([]Condicione, error
 			&i.ValorDescuento,
 			&i.ReiniciaContador,
 			&i.Vigente,
+			&i.TipoTrigger,
+			&i.DiasSemana,
+			&i.ScopeTrigger,
+			&i.ScopeTriggerCategoriaID,
+			&i.ScopeTriggerProductoID,
+			&i.ScopeDescuento,
+			&i.ScopeDescuentoCategoriaID,
 		); err != nil {
 			return nil, err
 		}
@@ -214,22 +296,36 @@ func (q *Queries) ListTodasCondiciones(ctx context.Context) ([]Condicione, error
 
 const updateCondicion = `-- name: UpdateCondicion :one
 UPDATE condiciones
-SET umbral_infusiones = $2,
-    tipo_descuento    = $3,
-    valor_descuento   = $4,
-    reinicia_contador = $5,
-    vigente           = $6
+SET umbral_infusiones            = $2,
+    tipo_descuento               = $3,
+    valor_descuento              = $4,
+    reinicia_contador            = $5,
+    vigente                      = $6,
+    tipo_trigger                 = $7,
+    dias_semana                  = $8,
+    scope_trigger                = $9,
+    scope_trigger_categoria_id   = $10,
+    scope_trigger_producto_id    = $11,
+    scope_descuento              = $12,
+    scope_descuento_categoria_id = $13
 WHERE id = $1
-RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente
+RETURNING id, beneficio_id, umbral_infusiones, tipo_descuento, valor_descuento, reinicia_contador, vigente, tipo_trigger, dias_semana, scope_trigger, scope_trigger_categoria_id, scope_trigger_producto_id, scope_descuento, scope_descuento_categoria_id
 `
 
 type UpdateCondicionParams struct {
-	ID               uuid.UUID `json:"id"`
-	UmbralInfusiones int32     `json:"umbral_infusiones"`
-	TipoDescuento    string    `json:"tipo_descuento"`
-	ValorDescuento   int32     `json:"valor_descuento"`
-	ReiniciaContador bool      `json:"reinicia_contador"`
-	Vigente          bool      `json:"vigente"`
+	ID                        uuid.UUID   `json:"id"`
+	UmbralInfusiones          int32       `json:"umbral_infusiones"`
+	TipoDescuento             string      `json:"tipo_descuento"`
+	ValorDescuento            int32       `json:"valor_descuento"`
+	ReiniciaContador          bool        `json:"reinicia_contador"`
+	Vigente                   bool        `json:"vigente"`
+	TipoTrigger               string      `json:"tipo_trigger"`
+	DiasSemana                []int32     `json:"dias_semana"`
+	ScopeTrigger              string      `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   pgtype.UUID `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string      `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
 }
 
 func (q *Queries) UpdateCondicion(ctx context.Context, arg UpdateCondicionParams) (Condicione, error) {
@@ -240,6 +336,13 @@ func (q *Queries) UpdateCondicion(ctx context.Context, arg UpdateCondicionParams
 		arg.ValorDescuento,
 		arg.ReiniciaContador,
 		arg.Vigente,
+		arg.TipoTrigger,
+		arg.DiasSemana,
+		arg.ScopeTrigger,
+		arg.ScopeTriggerCategoriaID,
+		arg.ScopeTriggerProductoID,
+		arg.ScopeDescuento,
+		arg.ScopeDescuentoCategoriaID,
 	)
 	var i Condicione
 	err := row.Scan(
@@ -250,6 +353,13 @@ func (q *Queries) UpdateCondicion(ctx context.Context, arg UpdateCondicionParams
 		&i.ValorDescuento,
 		&i.ReiniciaContador,
 		&i.Vigente,
+		&i.TipoTrigger,
+		&i.DiasSemana,
+		&i.ScopeTrigger,
+		&i.ScopeTriggerCategoriaID,
+		&i.ScopeTriggerProductoID,
+		&i.ScopeDescuento,
+		&i.ScopeDescuentoCategoriaID,
 	)
 	return i, err
 }

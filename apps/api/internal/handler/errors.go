@@ -38,6 +38,18 @@ func parseUUIDParam(c *gin.Context, name string) (uuid.UUID, bool) {
 	return id, true
 }
 
+// parseUUIDPtr convierte un *string con UUID a *uuid.UUID; devuelve nil si es nil o vacío.
+func parseUUIDPtr(s *string) *uuid.UUID {
+	if s == nil || *s == "" {
+		return nil
+	}
+	id, err := uuid.Parse(*s)
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
 func mapDomainError(err error) (int, string) {
 	switch {
 	case errors.Is(err, domain.ErrCredencialesInvalidas):

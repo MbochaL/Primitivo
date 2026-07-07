@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/martinbosch1996/primitivo/apps/api/internal/db/sqlc"
 	"github.com/martinbosch1996/primitivo/apps/api/internal/domain"
@@ -36,7 +37,7 @@ func toBeneficio(row sqlc.Beneficio) domain.Beneficio {
 }
 
 func toCondicion(row sqlc.Condicione) domain.Condicion {
-	return domain.Condicion{
+	c := domain.Condicion{
 		ID:               row.ID,
 		BeneficioID:      row.BeneficioID,
 		UmbralInfusiones: int(row.UmbralInfusiones),
@@ -44,7 +45,47 @@ func toCondicion(row sqlc.Condicione) domain.Condicion {
 		ValorDescuento:   int(row.ValorDescuento),
 		ReiniciaContador: row.ReiniciaContador,
 		Vigente:          row.Vigente,
+		TipoTrigger:      row.TipoTrigger,
+		ScopeTrigger:     row.ScopeTrigger,
+		ScopeDescuento:   row.ScopeDescuento,
 	}
+	for _, d := range row.DiasSemana {
+		c.DiasSemana = append(c.DiasSemana, int(d))
+	}
+	if row.ScopeTriggerCategoriaID.Valid {
+		id := row.ScopeTriggerCategoriaID.Bytes
+		uid := uuid.UUID(id)
+		c.ScopeTriggerCategoriaID = &uid
+	}
+	if row.ScopeTriggerProductoID.Valid {
+		id := row.ScopeTriggerProductoID.Bytes
+		uid := uuid.UUID(id)
+		c.ScopeTriggerProductoID = &uid
+	}
+	if row.ScopeDescuentoCategoriaID.Valid {
+		id := row.ScopeDescuentoCategoriaID.Bytes
+		uid := uuid.UUID(id)
+		c.ScopeDescuentoCategoriaID = &uid
+	}
+	return c
+}
+
+func uuidPtrToPgtype(id *uuid.UUID) pgtype.UUID {
+	if id == nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: *id, Valid: true}
+}
+
+func intSliceToInt32(s []int) []int32 {
+	if s == nil {
+		return nil
+	}
+	out := make([]int32, len(s))
+	for i, v := range s {
+		out[i] = int32(v)
+	}
+	return out
 }
 
 // ── BeneficioRepository ───────────────────────────────────────────────────────
@@ -54,7 +95,6 @@ func (r *BeneficioRepo) ListBeneficios(ctx context.Context) ([]domain.BeneficioC
 	if err != nil {
 		return nil, err
 	}
-	// Cargamos todas las condiciones de una vez y las agrupamos en Go.
 	allConds, err := r.q.ListTodasCondiciones(ctx)
 	if err != nil {
 		return nil, err
@@ -157,12 +197,19 @@ func (r *BeneficioRepo) DesactivarBeneficio(ctx context.Context, id uuid.UUID) (
 
 func (r *BeneficioRepo) CrearCondicion(ctx context.Context, n domain.NuevaCondicion) (domain.Condicion, error) {
 	row, err := r.q.CreateCondicion(ctx, sqlc.CreateCondicionParams{
-		BeneficioID:      n.BeneficioID,
-		UmbralInfusiones: int32(n.UmbralInfusiones),
-		TipoDescuento:    n.TipoDescuento,
-		ValorDescuento:   int32(n.ValorDescuento),
-		ReiniciaContador: n.ReiniciaContador,
-		Vigente:          n.Vigente,
+		BeneficioID:               n.BeneficioID,
+		UmbralInfusiones:          int32(n.UmbralInfusiones),
+		TipoDescuento:             n.TipoDescuento,
+		ValorDescuento:            int32(n.ValorDescuento),
+		ReiniciaContador:          n.ReiniciaContador,
+		Vigente:                   n.Vigente,
+		TipoTrigger:               n.TipoTrigger,
+		DiasSemana:                intSliceToInt32(n.DiasSemana),
+		ScopeTrigger:              n.ScopeTrigger,
+		ScopeTriggerCategoriaID:   uuidPtrToPgtype(n.ScopeTriggerCategoriaID),
+		ScopeTriggerProductoID:    uuidPtrToPgtype(n.ScopeTriggerProductoID),
+		ScopeDescuento:            n.ScopeDescuento,
+		ScopeDescuentoCategoriaID: uuidPtrToPgtype(n.ScopeDescuentoCategoriaID),
 	})
 	if err != nil {
 		return domain.Condicion{}, err
@@ -172,12 +219,19 @@ func (r *BeneficioRepo) CrearCondicion(ctx context.Context, n domain.NuevaCondic
 
 func (r *BeneficioRepo) ActualizarCondicion(ctx context.Context, u domain.ActualizarCondicionInput) (domain.Condicion, error) {
 	row, err := r.q.UpdateCondicion(ctx, sqlc.UpdateCondicionParams{
-		ID:               u.ID,
-		UmbralInfusiones: int32(u.UmbralInfusiones),
-		TipoDescuento:    u.TipoDescuento,
-		ValorDescuento:   int32(u.ValorDescuento),
-		ReiniciaContador: u.ReiniciaContador,
-		Vigente:          u.Vigente,
+		ID:                        u.ID,
+		UmbralInfusiones:          int32(u.UmbralInfusiones),
+		TipoDescuento:             u.TipoDescuento,
+		ValorDescuento:            int32(u.ValorDescuento),
+		ReiniciaContador:          u.ReiniciaContador,
+		Vigente:                   u.Vigente,
+		TipoTrigger:               u.TipoTrigger,
+		DiasSemana:                intSliceToInt32(u.DiasSemana),
+		ScopeTrigger:              u.ScopeTrigger,
+		ScopeTriggerCategoriaID:   uuidPtrToPgtype(u.ScopeTriggerCategoriaID),
+		ScopeTriggerProductoID:    uuidPtrToPgtype(u.ScopeTriggerProductoID),
+		ScopeDescuento:            u.ScopeDescuento,
+		ScopeDescuentoCategoriaID: uuidPtrToPgtype(u.ScopeDescuentoCategoriaID),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Condicion{}, domain.ErrCondicionNoEncontrada

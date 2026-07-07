@@ -125,17 +125,33 @@ type ActualizarBeneficioRequest struct {
 // CrearCondicionRequest es el cuerpo de POST /beneficios/:id/condiciones.
 type CrearCondicionRequest struct {
 	UmbralInfusiones int    `json:"umbral_infusiones" binding:"min=0"`
-	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo"`
+	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo producto_gratis"`
 	ValorDescuento   int    `json:"valor_descuento" binding:"min=0"`
 	ReiniciaContador bool   `json:"reinicia_contador"`
 	Vigente          *bool  `json:"vigente"`
+
+	TipoTrigger             string   `json:"tipo_trigger" binding:"omitempty,oneof=siempre dias_semana contador"`
+	DiasSemana              []int    `json:"dias_semana"`
+	ScopeTrigger            string   `json:"scope_trigger" binding:"omitempty,oneof=infusiones categoria producto"`
+	ScopeTriggerCategoriaID *string  `json:"scope_trigger_categoria_id" binding:"omitempty,uuid"`
+	ScopeTriggerProductoID  *string  `json:"scope_trigger_producto_id" binding:"omitempty,uuid"`
+	ScopeDescuento          string   `json:"scope_descuento" binding:"omitempty,oneof=total categoria"`
+	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id" binding:"omitempty,uuid"`
 }
 
 // ActualizarCondicionRequest es el cuerpo de PUT /condiciones/:id.
 type ActualizarCondicionRequest struct {
 	UmbralInfusiones int    `json:"umbral_infusiones" binding:"min=0"`
-	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo"`
+	TipoDescuento    string `json:"tipo_descuento" binding:"required,oneof=porcentaje monto_fijo producto_gratis"`
 	ValorDescuento   int    `json:"valor_descuento" binding:"min=0"`
 	ReiniciaContador bool   `json:"reinicia_contador"`
 	Vigente          bool   `json:"vigente"`
+
+	TipoTrigger             string   `json:"tipo_trigger" binding:"omitempty,oneof=siempre dias_semana contador"`
+	DiasSemana              []int    `json:"dias_semana"`
+	ScopeTrigger            string   `json:"scope_trigger" binding:"omitempty,oneof=infusiones categoria producto"`
+	ScopeTriggerCategoriaID *string  `json:"scope_trigger_categoria_id" binding:"omitempty,uuid"`
+	ScopeTriggerProductoID  *string  `json:"scope_trigger_producto_id" binding:"omitempty,uuid"`
+	ScopeDescuento          string   `json:"scope_descuento" binding:"omitempty,oneof=total categoria"`
+	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id" binding:"omitempty,uuid"`
 }

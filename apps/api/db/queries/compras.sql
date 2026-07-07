@@ -21,3 +21,20 @@ RETURNING *;
 -- name: CreateDetalleCompra :exec
 INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_unitario)
 VALUES ($1, $2, $3, $4);
+
+-- name: ContarItemsPorClienteYCategoria :one
+SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
+FROM detalle_compra dc
+JOIN compras co ON co.id = dc.compra_id
+JOIN productos p ON p.id = dc.producto_id
+WHERE co.cliente_id = $1
+  AND p.categoria_id = $2
+  AND ($3::timestamptz IS NULL OR co.fecha > $3);
+
+-- name: ContarItemsPorClienteYProducto :one
+SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
+FROM detalle_compra dc
+JOIN compras co ON co.id = dc.compra_id
+WHERE co.cliente_id = $1
+  AND dc.producto_id = $2
+  AND ($3::timestamptz IS NULL OR co.fecha > $3);

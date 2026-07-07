@@ -8,9 +8,12 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	ContarItemsPorClienteYCategoria(ctx context.Context, arg ContarItemsPorClienteYCategoriaParams) (int32, error)
+	ContarItemsPorClienteYProducto(ctx context.Context, arg ContarItemsPorClienteYProductoParams) (int32, error)
 	CreateBeneficio(ctx context.Context, arg CreateBeneficioParams) (Beneficio, error)
 	CreateCanje(ctx context.Context, arg CreateCanjeParams) (Canje, error)
 	CreateCategoria(ctx context.Context, arg CreateCategoriaParams) (Categoria, error)
@@ -26,6 +29,7 @@ type Querier interface {
 	GetClientePorDNI(ctx context.Context, dni string) (GetClientePorDNIRow, error)
 	GetClientePorID(ctx context.Context, id uuid.UUID) (GetClientePorIDRow, error)
 	GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error)
+	GetFechaUltimoCanjeCondicion(ctx context.Context, arg GetFechaUltimoCanjeCondicionParams) (pgtype.Timestamptz, error)
 	GetInstitucionByID(ctx context.Context, id uuid.UUID) (Institucione, error)
 	GetProductoPorID(ctx context.Context, id uuid.UUID) (Producto, error)
 	GetUsuarioByEmail(ctx context.Context, email string) (UsuariosSistema, error)

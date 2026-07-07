@@ -25,5 +25,30 @@ export const $dto_BeneficioDisponibleResponse = {
         valor_descuento: {
             type: 'number',
         },
+        tipo_trigger: {
+            type: 'string',
+        },
+        dias_semana: {
+            type: 'array',
+            contains: { type: 'number' },
+        },
+        scope_trigger: {
+            type: 'string',
+        },
+        scope_trigger_categoria_id: {
+            type: 'string',
+            isNullable: true,
+        },
+        scope_trigger_producto_id: {
+            type: 'string',
+            isNullable: true,
+        },
+        scope_descuento: {
+            type: 'string',
+        },
+        scope_descuento_categoria_id: {
+            type: 'string',
+            isNullable: true,
+        },
     },
 } as const;

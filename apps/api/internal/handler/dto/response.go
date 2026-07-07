@@ -150,6 +150,14 @@ type BeneficioDisponibleResponse struct {
 	ValorDescuento   int    `json:"valor_descuento"`
 	ReiniciaContador bool   `json:"reinicia_contador"`
 	Alcanzado        bool   `json:"alcanzado"`
+
+	TipoTrigger               string  `json:"tipo_trigger"`
+	DiasSemana                []int   `json:"dias_semana"`
+	ScopeTrigger              string  `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   *string `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    *string `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string  `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id"`
 }
 
 // ToBeneficioDisponibleResponseList mapea los beneficios disponibles a sus DTOs.
@@ -157,13 +165,20 @@ func ToBeneficioDisponibleResponseList(bs []domain.BeneficioDisponible) []Benefi
 	out := make([]BeneficioDisponibleResponse, 0, len(bs))
 	for _, b := range bs {
 		out = append(out, BeneficioDisponibleResponse{
-			CondicionID:      b.CondicionID.String(),
-			BeneficioNombre:  b.BeneficioNombre,
-			UmbralInfusiones: b.UmbralInfusiones,
-			TipoDescuento:    b.TipoDescuento,
-			ValorDescuento:   b.ValorDescuento,
-			ReiniciaContador: b.ReiniciaContador,
-			Alcanzado:        b.Alcanzado,
+			CondicionID:               b.CondicionID.String(),
+			BeneficioNombre:           b.BeneficioNombre,
+			UmbralInfusiones:          b.UmbralInfusiones,
+			TipoDescuento:             b.TipoDescuento,
+			ValorDescuento:            b.ValorDescuento,
+			ReiniciaContador:          b.ReiniciaContador,
+			Alcanzado:                 b.Alcanzado,
+			TipoTrigger:               b.TipoTrigger,
+			DiasSemana:                b.DiasSemana,
+			ScopeTrigger:              b.ScopeTrigger,
+			ScopeTriggerCategoriaID:   uuidPtrToString(b.ScopeTriggerCategoriaID),
+			ScopeTriggerProductoID:    uuidPtrToString(b.ScopeTriggerProductoID),
+			ScopeDescuento:            b.ScopeDescuento,
+			ScopeDescuentoCategoriaID: uuidPtrToString(b.ScopeDescuentoCategoriaID),
 		})
 	}
 	return out
@@ -345,6 +360,14 @@ type CondicionResponse struct {
 	ValorDescuento   int    `json:"valor_descuento"`
 	ReiniciaContador bool   `json:"reinicia_contador"`
 	Vigente          bool   `json:"vigente"`
+
+	TipoTrigger               string  `json:"tipo_trigger"`
+	DiasSemana                []int   `json:"dias_semana"`
+	ScopeTrigger              string  `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   *string `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    *string `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string  `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id"`
 }
 
 // BeneficioAdminResponse expone el beneficio con su institución y condiciones (admin).
@@ -361,15 +384,7 @@ type BeneficioAdminResponse struct {
 func ToBeneficioAdminResponse(b domain.BeneficioConDetalle) BeneficioAdminResponse {
 	conds := make([]CondicionResponse, 0, len(b.Condiciones))
 	for _, c := range b.Condiciones {
-		conds = append(conds, CondicionResponse{
-			ID:               c.ID.String(),
-			BeneficioID:      c.BeneficioID.String(),
-			UmbralInfusiones: c.UmbralInfusiones,
-			TipoDescuento:    c.TipoDescuento,
-			ValorDescuento:   c.ValorDescuento,
-			ReiniciaContador: c.ReiniciaContador,
-			Vigente:          c.Vigente,
-		})
+		conds = append(conds, ToCondicionResponse(c))
 	}
 	return BeneficioAdminResponse{
 		ID:                b.ID.String(),
@@ -393,12 +408,19 @@ func ToBeneficiosAdminResponse(bs []domain.BeneficioConDetalle) []BeneficioAdmin
 // ToCondicionResponse mapea una condición a su DTO.
 func ToCondicionResponse(c domain.Condicion) CondicionResponse {
 	return CondicionResponse{
-		ID:               c.ID.String(),
-		BeneficioID:      c.BeneficioID.String(),
-		UmbralInfusiones: c.UmbralInfusiones,
-		TipoDescuento:    c.TipoDescuento,
-		ValorDescuento:   c.ValorDescuento,
-		ReiniciaContador: c.ReiniciaContador,
-		Vigente:          c.Vigente,
+		ID:                        c.ID.String(),
+		BeneficioID:               c.BeneficioID.String(),
+		UmbralInfusiones:          c.UmbralInfusiones,
+		TipoDescuento:             c.TipoDescuento,
+		ValorDescuento:            c.ValorDescuento,
+		ReiniciaContador:          c.ReiniciaContador,
+		Vigente:                   c.Vigente,
+		TipoTrigger:               c.TipoTrigger,
+		DiasSemana:                c.DiasSemana,
+		ScopeTrigger:              c.ScopeTrigger,
+		ScopeTriggerCategoriaID:   uuidPtrToString(c.ScopeTriggerCategoriaID),
+		ScopeTriggerProductoID:    uuidPtrToString(c.ScopeTriggerProductoID),
+		ScopeDescuento:            c.ScopeDescuento,
+		ScopeDescuentoCategoriaID: uuidPtrToString(c.ScopeDescuentoCategoriaID),
 	}
 }

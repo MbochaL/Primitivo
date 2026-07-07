@@ -173,13 +173,32 @@ func (h *BeneficioHandler) CrearCondicion(c *gin.Context) {
 	if req.Vigente != nil {
 		vigente = *req.Vigente
 	}
+	tipoTrigger := req.TipoTrigger
+	if tipoTrigger == "" {
+		tipoTrigger = "contador"
+	}
+	scopeTrigger := req.ScopeTrigger
+	if scopeTrigger == "" {
+		scopeTrigger = "infusiones"
+	}
+	scopeDescuento := req.ScopeDescuento
+	if scopeDescuento == "" {
+		scopeDescuento = "total"
+	}
 	cond, err := h.svc.CrearCondicion(c.Request.Context(), domain.NuevaCondicion{
-		BeneficioID:      beneficioID,
-		UmbralInfusiones: req.UmbralInfusiones,
-		TipoDescuento:    req.TipoDescuento,
-		ValorDescuento:   req.ValorDescuento,
-		ReiniciaContador: req.ReiniciaContador,
-		Vigente:          vigente,
+		BeneficioID:               beneficioID,
+		UmbralInfusiones:          req.UmbralInfusiones,
+		TipoDescuento:             req.TipoDescuento,
+		ValorDescuento:            req.ValorDescuento,
+		ReiniciaContador:          req.ReiniciaContador,
+		Vigente:                   vigente,
+		TipoTrigger:               tipoTrigger,
+		DiasSemana:                req.DiasSemana,
+		ScopeTrigger:              scopeTrigger,
+		ScopeTriggerCategoriaID:   parseUUIDPtr(req.ScopeTriggerCategoriaID),
+		ScopeTriggerProductoID:    parseUUIDPtr(req.ScopeTriggerProductoID),
+		ScopeDescuento:            scopeDescuento,
+		ScopeDescuentoCategoriaID: parseUUIDPtr(req.ScopeDescuentoCategoriaID),
 	})
 	if err != nil {
 		respondError(c, err)
@@ -210,13 +229,32 @@ func (h *BeneficioHandler) ActualizarCondicion(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
+	tipoTriggerUpd := req.TipoTrigger
+	if tipoTriggerUpd == "" {
+		tipoTriggerUpd = "contador"
+	}
+	scopeTriggerUpd := req.ScopeTrigger
+	if scopeTriggerUpd == "" {
+		scopeTriggerUpd = "infusiones"
+	}
+	scopeDescuentoUpd := req.ScopeDescuento
+	if scopeDescuentoUpd == "" {
+		scopeDescuentoUpd = "total"
+	}
 	cond, err := h.svc.ActualizarCondicion(c.Request.Context(), domain.ActualizarCondicionInput{
-		ID:               id,
-		UmbralInfusiones: req.UmbralInfusiones,
-		TipoDescuento:    req.TipoDescuento,
-		ValorDescuento:   req.ValorDescuento,
-		ReiniciaContador: req.ReiniciaContador,
-		Vigente:          req.Vigente,
+		ID:                        id,
+		UmbralInfusiones:          req.UmbralInfusiones,
+		TipoDescuento:             req.TipoDescuento,
+		ValorDescuento:            req.ValorDescuento,
+		ReiniciaContador:          req.ReiniciaContador,
+		Vigente:                   req.Vigente,
+		TipoTrigger:               tipoTriggerUpd,
+		DiasSemana:                req.DiasSemana,
+		ScopeTrigger:              scopeTriggerUpd,
+		ScopeTriggerCategoriaID:   parseUUIDPtr(req.ScopeTriggerCategoriaID),
+		ScopeTriggerProductoID:    parseUUIDPtr(req.ScopeTriggerProductoID),
+		ScopeDescuento:            scopeDescuentoUpd,
+		ScopeDescuentoCategoriaID: parseUUIDPtr(req.ScopeDescuentoCategoriaID),
 	})
 	if err != nil {
 		respondError(c, err)

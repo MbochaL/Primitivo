@@ -3,15 +3,26 @@ package domain
 import "github.com/google/uuid"
 
 // BeneficioDisponible es un read-model para la vista del cliente: una condición vigente
-// de un beneficio de su institución, con el flag de si ya alcanzó el umbral.
+// de un beneficio de su institución, con el flag de si ya alcanzó el trigger.
 type BeneficioDisponible struct {
 	CondicionID      uuid.UUID
 	BeneficioNombre  string
 	UmbralInfusiones int
-	TipoDescuento    string // porcentaje | monto_fijo
+	TipoDescuento    string // porcentaje | monto_fijo | producto_gratis
 	ValorDescuento   int
 	ReiniciaContador bool
-	Alcanzado        bool // contador_infusiones >= umbral_infusiones
+	Alcanzado        bool
+
+	// Trigger
+	TipoTrigger             string    // siempre | dias_semana | contador
+	DiasSemana              []int     // relevante si TipoTrigger='dias_semana' (0=dom..6=sab)
+	ScopeTrigger            string    // infusiones | categoria | producto
+	ScopeTriggerCategoriaID *uuid.UUID
+	ScopeTriggerProductoID  *uuid.UUID
+
+	// Alcance del descuento
+	ScopeDescuento            string // total | categoria
+	ScopeDescuentoCategoriaID *uuid.UUID
 }
 
 // ── Entidades admin ──────────────────────────────────────────────────────────
@@ -24,15 +35,26 @@ type Beneficio struct {
 	Activo        bool
 }
 
-// Condicion es una regla escalonada dentro de un beneficio.
+// Condicion es una regla dentro de un beneficio.
 type Condicion struct {
 	ID               uuid.UUID
 	BeneficioID      uuid.UUID
 	UmbralInfusiones int
-	TipoDescuento    string // porcentaje | monto_fijo
+	TipoDescuento    string // porcentaje | monto_fijo | producto_gratis
 	ValorDescuento   int
 	ReiniciaContador bool
 	Vigente          bool
+
+	// Trigger
+	TipoTrigger             string // siempre | dias_semana | contador
+	DiasSemana              []int
+	ScopeTrigger            string // infusiones | categoria | producto
+	ScopeTriggerCategoriaID *uuid.UUID
+	ScopeTriggerProductoID  *uuid.UUID
+
+	// Alcance del descuento
+	ScopeDescuento            string // total | categoria
+	ScopeDescuentoCategoriaID *uuid.UUID
 }
 
 // BeneficioConDetalle es el read-model admin de un beneficio con su institución y condiciones.
@@ -66,6 +88,15 @@ type NuevaCondicion struct {
 	ValorDescuento   int
 	ReiniciaContador bool
 	Vigente          bool
+
+	TipoTrigger             string
+	DiasSemana              []int
+	ScopeTrigger            string
+	ScopeTriggerCategoriaID *uuid.UUID
+	ScopeTriggerProductoID  *uuid.UUID
+
+	ScopeDescuento            string
+	ScopeDescuentoCategoriaID *uuid.UUID
 }
 
 // ActualizarCondicionInput es el input para editar una condición (admin).
@@ -76,4 +107,13 @@ type ActualizarCondicionInput struct {
 	ValorDescuento   int
 	ReiniciaContador bool
 	Vigente          bool
+
+	TipoTrigger             string
+	DiasSemana              []int
+	ScopeTrigger            string
+	ScopeTriggerCategoriaID *uuid.UUID
+	ScopeTriggerProductoID  *uuid.UUID
+
+	ScopeDescuento            string
+	ScopeDescuentoCategoriaID *uuid.UUID
 }

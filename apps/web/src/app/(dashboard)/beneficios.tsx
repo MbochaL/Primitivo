@@ -2,9 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   BeneficiosService,
   InstitucionesService,
+  MenuService,
   type dto_BeneficioAdminResponse,
   type dto_CondicionResponse,
   type dto_InstitucionResponse,
+  type dto_CategoriaMenuResponse,
   dto_CrearCondicionRequest,
   dto_ActualizarCondicionRequest,
 } from '@primitivo/api-client';
@@ -42,15 +44,45 @@ import { Redirect } from 'expo-router';
 const TIPOS_DESCUENTO = [
   dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
   dto_CrearCondicionRequest.tipo_descuento.MONTO_FIJO,
+  dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS,
 ] as const;
 type TipoDescuentoValue = (typeof TIPOS_DESCUENTO)[number];
 
-const labelTipo = (t: TipoDescuentoValue) =>
-  t === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE ? 'Porcentaje' : 'Monto fijo';
+const TIPOS_TRIGGER = [
+  dto_CrearCondicionRequest.tipo_trigger.SIEMPRE,
+  dto_CrearCondicionRequest.tipo_trigger.DIAS_SEMANA,
+  dto_CrearCondicionRequest.tipo_trigger.CONTADOR,
+] as const;
+type TipoTriggerValue = (typeof TIPOS_TRIGGER)[number];
+
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as const;
+
+const labelTipoDescuento = (t: TipoDescuentoValue) => {
+  if (t === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE) return 'Porcentaje';
+  if (t === dto_CrearCondicionRequest.tipo_descuento.MONTO_FIJO) return 'Monto fijo';
+  return 'Prod. gratis';
+};
+
+const labelTipoTrigger = (t: TipoTriggerValue) => {
+  if (t === dto_CrearCondicionRequest.tipo_trigger.SIEMPRE) return 'Siempre';
+  if (t === dto_CrearCondicionRequest.tipo_trigger.DIAS_SEMANA) return 'Días';
+  return 'Contador';
+};
 
 const formatDescuento = (tipo: string | undefined, valor: number | undefined) => {
+  if (tipo === 'producto_gratis') return 'Gratis';
   if (valor == null) return '—';
-  return tipo === 'porcentaje' ? `${valor}%` : `$ ${valor.toLocaleString('es-AR')}`;
+  return tipo === 'porcentaje' ? `${valor}%` : `$${valor.toLocaleString('es-AR')}`;
+};
+
+const formatTrigger = (c: dto_CondicionResponse) => {
+  if (c.tipo_trigger === 'siempre') return 'Siempre';
+  if (c.tipo_trigger === 'dias_semana') {
+    const dias = (c.dias_semana ?? []).map((d) => DIAS[d] ?? d).join(', ');
+    return dias || '—';
+  }
+  const scope = c.scope_trigger === 'infusiones' ? 'inf.' : c.scope_trigger === 'categoria' ? 'cat.' : 'prod.';
+  return `${c.umbral_infusiones ?? 0} ${scope}`;
 };
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
@@ -64,12 +96,31 @@ type BeneficioForm = z.infer<typeof beneficioSchema>;
 
 const condicionSchema = z
   .object({
+    tipo_trigger: z.enum([
+      dto_CrearCondicionRequest.tipo_trigger.SIEMPRE,
+      dto_CrearCondicionRequest.tipo_trigger.DIAS_SEMANA,
+      dto_CrearCondicionRequest.tipo_trigger.CONTADOR,
+    ]),
+    dias_semana: z.array(z.number()).default([]),
+    scope_trigger: z.enum([
+      dto_CrearCondicionRequest.scope_trigger.INFUSIONES,
+      dto_CrearCondicionRequest.scope_trigger.CATEGORIA,
+      dto_CrearCondicionRequest.scope_trigger.PRODUCTO,
+    ]),
+    scope_trigger_categoria_id: z.string().nullable().optional(),
+    scope_trigger_producto_id: z.string().nullable().optional(),
     umbral_infusiones: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
     tipo_descuento: z.enum([
       dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
       dto_CrearCondicionRequest.tipo_descuento.MONTO_FIJO,
+      dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS,
     ]),
     valor_descuento: z.coerce.number().int().min(0, 'Debe ser ≥ 0'),
+    scope_descuento: z.enum([
+      dto_CrearCondicionRequest.scope_descuento.TOTAL,
+      dto_CrearCondicionRequest.scope_descuento.CATEGORIA,
+    ]),
+    scope_descuento_categoria_id: z.string().nullable().optional(),
     reinicia_contador: z.boolean().default(false),
     vigente: z.boolean().default(true),
   })
@@ -110,6 +161,11 @@ export default function BeneficiosScreen() {
   const { data: instituciones = [], isLoading: loadingInstituciones } = useQuery({
     queryKey: ['instituciones'],
     queryFn: () => InstitucionesService.getInstituciones(),
+  });
+
+  const { data: menu = [] } = useQuery({
+    queryKey: ['menu'],
+    queryFn: () => MenuService.getMenu(),
   });
 
   const loading = loadingBeneficios || loadingInstituciones;
@@ -189,6 +245,13 @@ export default function BeneficiosScreen() {
         valor_descuento: d.valor_descuento,
         reinicia_contador: d.reinicia_contador,
         vigente: d.vigente,
+        tipo_trigger: d.tipo_trigger as dto_CrearCondicionRequest.tipo_trigger,
+        dias_semana: d.dias_semana,
+        scope_trigger: d.scope_trigger as dto_CrearCondicionRequest.scope_trigger,
+        scope_trigger_categoria_id: d.scope_trigger_categoria_id ?? null,
+        scope_trigger_producto_id: d.scope_trigger_producto_id ?? null,
+        scope_descuento: d.scope_descuento as dto_CrearCondicionRequest.scope_descuento,
+        scope_descuento_categoria_id: d.scope_descuento_categoria_id ?? null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['beneficios'] });
@@ -206,6 +269,13 @@ export default function BeneficiosScreen() {
         valor_descuento: d.valor_descuento,
         reinicia_contador: d.reinicia_contador,
         vigente: d.vigente,
+        tipo_trigger: d.tipo_trigger as dto_ActualizarCondicionRequest.tipo_trigger,
+        dias_semana: d.dias_semana,
+        scope_trigger: d.scope_trigger as dto_ActualizarCondicionRequest.scope_trigger,
+        scope_trigger_categoria_id: d.scope_trigger_categoria_id ?? null,
+        scope_trigger_producto_id: d.scope_trigger_producto_id ?? null,
+        scope_descuento: d.scope_descuento as dto_ActualizarCondicionRequest.scope_descuento,
+        scope_descuento_categoria_id: d.scope_descuento_categoria_id ?? null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['beneficios'] });
@@ -218,7 +288,6 @@ export default function BeneficiosScreen() {
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <Screen scroll>
-      {/* Header manual */}
       <View style={styles.pageHeader}>
         <Title>Beneficios</Title>
         {esAdmin && (
@@ -303,6 +372,7 @@ export default function BeneficiosScreen() {
         visible={!!condicionModal}
         mode={condicionModal?.mode ?? 'crear'}
         initial={condicionModal?.condicion}
+        categorias={menu}
         loading={crearCondicion.isPending || editarCondicion.isPending}
         onSubmit={(d) => {
           if (condicionModal?.mode === 'editar' && condicionModal.condicion?.id) {
@@ -396,12 +466,10 @@ function BeneficioCard({
           </Caption>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {/* Wrapper en columna: el ScrollView horizontal pone sus hijos en fila,
-                este View los apila verticalmente para que header y filas se vean bien. */}
             <View>
               <View style={styles.condTableHeader}>
-                <Caption style={[styles.condCell, styles.condCellUmbral]}>Umbral</Caption>
-                <Caption style={[styles.condCell, styles.condCellTipo]}>Tipo</Caption>
+                <Caption style={[styles.condCell, styles.condCellTrigger]}>Cuándo</Caption>
+                <Caption style={[styles.condCell, styles.condCellTipo]}>Descuento</Caption>
                 <Caption style={[styles.condCell, styles.condCellValor]}>Valor</Caption>
                 <Caption style={[styles.condCell, styles.condCellReinicia]}>Reinicia</Caption>
                 <Caption style={[styles.condCell, styles.condCellVigente]}>Vigente</Caption>
@@ -409,11 +477,15 @@ function BeneficioCard({
               </View>
               {sortedConds.map((c) => (
                 <View key={c.id} style={styles.condRow}>
-                  <Body style={[styles.condCell, styles.condCellUmbral]}>
-                    {c.umbral_infusiones ?? 0} inf.
+                  <Body style={[styles.condCell, styles.condCellTrigger]}>
+                    {formatTrigger(c)}
                   </Body>
                   <Body style={[styles.condCell, styles.condCellTipo]}>
-                    {c.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto fijo'}
+                    {c.tipo_descuento === 'porcentaje'
+                      ? 'Porcentaje'
+                      : c.tipo_descuento === 'monto_fijo'
+                      ? 'Monto fijo'
+                      : 'Prod. gratis'}
                   </Body>
                   <Body style={[styles.condCell, styles.condCellValor]}>
                     {formatDescuento(c.tipo_descuento, c.valor_descuento)}
@@ -588,6 +660,7 @@ function CondicionFormModal({
   visible,
   mode,
   initial,
+  categorias,
   loading,
   onSubmit,
   onClose,
@@ -595,6 +668,7 @@ function CondicionFormModal({
   visible: boolean;
   mode: 'crear' | 'editar';
   initial?: dto_CondicionResponse;
+  categorias: dto_CategoriaMenuResponse[];
   loading: boolean;
   onSubmit: (d: CondicionForm) => void;
   onClose: () => void;
@@ -608,31 +682,34 @@ function CondicionFormModal({
     formState: { errors },
   } = useForm<CondicionForm>({
     resolver: zodResolver(condicionSchema),
-    defaultValues: {
-      umbral_infusiones: initial?.umbral_infusiones ?? 0,
-      tipo_descuento:
-        (initial?.tipo_descuento as TipoDescuentoValue) ??
-        dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
-      valor_descuento: initial?.valor_descuento ?? 0,
-      reinicia_contador: initial?.reinicia_contador ?? false,
-      vigente: initial?.vigente ?? true,
-    },
+    defaultValues: buildDefaults(initial),
   });
 
   useEffect(() => {
-    reset({
-      umbral_infusiones: initial?.umbral_infusiones ?? 0,
-      tipo_descuento:
-        (initial?.tipo_descuento as TipoDescuentoValue) ??
-        dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
-      valor_descuento: initial?.valor_descuento ?? 0,
-      reinicia_contador: initial?.reinicia_contador ?? false,
-      vigente: initial?.vigente ?? true,
-    });
+    reset(buildDefaults(initial));
   }, [initial, reset]);
 
+  const tipoTrigger = watch('tipo_trigger');
+  const scopeTrigger = watch('scope_trigger');
+  const tipoDescuento = watch('tipo_descuento');
+  const scopeDescuento = watch('scope_descuento');
+  const diasSemana = watch('dias_semana');
   const reiniciaVal = watch('reinicia_contador');
   const vigenteVal = watch('vigente');
+
+  const toggleDia = (d: number) => {
+    const next = diasSemana.includes(d) ? diasSemana.filter((x) => x !== d) : [...diasSemana, d];
+    setValue('dias_semana', next);
+  };
+
+  const needsCategoriaTrigger =
+    tipoTrigger === dto_CrearCondicionRequest.tipo_trigger.CONTADOR &&
+    scopeTrigger === dto_CrearCondicionRequest.scope_trigger.CATEGORIA;
+
+  const needsCategoriaDescuento =
+    (tipoDescuento !== dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS &&
+      scopeDescuento === dto_CrearCondicionRequest.scope_descuento.CATEGORIA) ||
+    tipoDescuento === dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS;
 
   return (
     <FormModal
@@ -649,21 +726,129 @@ function CondicionFormModal({
         />
       }
     >
+      {/* ── TRIGGER ── */}
       <Controller
         control={control}
-        name="umbral_infusiones"
+        name="tipo_trigger"
         render={({ field }) => (
-          <TextField
-            label="Umbral de infusiones"
-            placeholder="0"
-            value={String(field.value)}
-            onChangeText={(v) => field.onChange(isNaN(Number(v)) ? 0 : Number(v))}
-            keyboardType="numeric"
-            error={errors.umbral_infusiones?.message}
-          />
+          <View style={styles.fieldWrap}>
+            <Label>Cuándo aplica</Label>
+            <View style={styles.segmented}>
+              {TIPOS_TRIGGER.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.segBtn, field.value === t && styles.segBtnActive]}
+                  onPress={() => field.onChange(t)}
+                >
+                  <Body style={field.value === t ? styles.segBtnActiveText : undefined}>
+                    {labelTipoTrigger(t)}
+                  </Body>
+                </Pressable>
+              ))}
+            </View>
+          </View>
         )}
       />
 
+      {/* días de semana */}
+      {tipoTrigger === dto_CrearCondicionRequest.tipo_trigger.DIAS_SEMANA && (
+        <View style={styles.fieldWrap}>
+          <Label>Días de la semana</Label>
+          <View style={styles.diasRow}>
+            {DIAS.map((label, idx) => (
+              <Pressable
+                key={idx}
+                style={[styles.diaBtn, diasSemana.includes(idx) && styles.diaBtnActive]}
+                onPress={() => toggleDia(idx)}
+              >
+                <Caption
+                  style={
+                    diasSemana.includes(idx)
+                      ? { color: theme.colors.white }
+                      : undefined
+                  }
+                >
+                  {label}
+                </Caption>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* scope del contador */}
+      {tipoTrigger === dto_CrearCondicionRequest.tipo_trigger.CONTADOR && (
+        <>
+          <Controller
+            control={control}
+            name="scope_trigger"
+            render={({ field }) => (
+              <View style={styles.fieldWrap}>
+                <Label>Qué se cuenta</Label>
+                <View style={styles.chipPicker}>
+                  {[
+                    { v: dto_CrearCondicionRequest.scope_trigger.INFUSIONES, label: 'Infusiones' },
+                    { v: dto_CrearCondicionRequest.scope_trigger.CATEGORIA, label: 'Categoría' },
+                    { v: dto_CrearCondicionRequest.scope_trigger.PRODUCTO, label: 'Producto' },
+                  ].map((opt) => (
+                    <Pressable
+                      key={opt.v}
+                      style={[styles.chip, field.value === opt.v && styles.chipActive]}
+                      onPress={() => field.onChange(opt.v)}
+                    >
+                      <Caption style={field.value === opt.v ? { color: theme.colors.white } : undefined}>
+                        {opt.label}
+                      </Caption>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          />
+
+          {needsCategoriaTrigger && (
+            <Controller
+              control={control}
+              name="scope_trigger_categoria_id"
+              render={({ field }) => (
+                <View style={styles.fieldWrap}>
+                  <Label>Categoría del contador</Label>
+                  <View style={styles.chipPicker}>
+                    {categorias.map((cat) => (
+                      <Pressable
+                        key={cat.id}
+                        style={[styles.chip, field.value === cat.id && styles.chipActive]}
+                        onPress={() => cat.id && field.onChange(cat.id)}
+                      >
+                        <Caption style={field.value === cat.id ? { color: theme.colors.white } : undefined}>
+                          {cat.nombre}
+                        </Caption>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+            />
+          )}
+
+          <Controller
+            control={control}
+            name="umbral_infusiones"
+            render={({ field }) => (
+              <TextField
+                label={`Umbral (cantidad de ${scopeTrigger === 'infusiones' ? 'infusiones' : 'ítems'})`}
+                placeholder="0"
+                value={String(field.value)}
+                onChangeText={(v) => field.onChange(isNaN(Number(v)) ? 0 : Number(v))}
+                keyboardType="numeric"
+                error={errors.umbral_infusiones?.message}
+              />
+            )}
+          />
+        </>
+      )}
+
+      {/* ── DESCUENTO ── */}
       <Controller
         control={control}
         name="tipo_descuento"
@@ -678,42 +863,95 @@ function CondicionFormModal({
                   onPress={() => field.onChange(t)}
                 >
                   <Body style={field.value === t ? styles.segBtnActiveText : undefined}>
-                    {labelTipo(t)}
+                    {labelTipoDescuento(t)}
                   </Body>
                 </Pressable>
               ))}
             </View>
-            {errors.tipo_descuento && (
-              <Caption style={{ color: theme.colors.danger }}>
-                {errors.tipo_descuento.message}
-              </Caption>
-            )}
           </View>
         )}
       />
 
-      <Controller
-        control={control}
-        name="valor_descuento"
-        render={({ field }) => (
-          <TextField
-            label={
-              watch('tipo_descuento') === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE
-                ? 'Porcentaje (0–100)'
-                : 'Monto fijo ($)'
-            }
-            placeholder={
-              watch('tipo_descuento') === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE
-                ? '10'
-                : '500'
-            }
-            value={String(field.value)}
-            onChangeText={(v) => field.onChange(isNaN(Number(v)) ? 0 : Number(v))}
-            keyboardType="numeric"
-            error={errors.valor_descuento?.message}
+      {tipoDescuento !== dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS && (
+        <>
+          <Controller
+            control={control}
+            name="valor_descuento"
+            render={({ field }) => (
+              <TextField
+                label={
+                  tipoDescuento === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE
+                    ? 'Porcentaje (0–100)'
+                    : 'Monto fijo ($)'
+                }
+                placeholder={
+                  tipoDescuento === dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE ? '10' : '500'
+                }
+                value={String(field.value)}
+                onChangeText={(v) => field.onChange(isNaN(Number(v)) ? 0 : Number(v))}
+                keyboardType="numeric"
+                error={errors.valor_descuento?.message}
+              />
+            )}
           />
-        )}
-      />
+
+          <Controller
+            control={control}
+            name="scope_descuento"
+            render={({ field }) => (
+              <View style={styles.fieldWrap}>
+                <Label>¿A qué aplica el descuento?</Label>
+                <View style={styles.chipPicker}>
+                  {[
+                    { v: dto_CrearCondicionRequest.scope_descuento.TOTAL, label: 'Compra completa' },
+                    { v: dto_CrearCondicionRequest.scope_descuento.CATEGORIA, label: 'Solo una categoría' },
+                  ].map((opt) => (
+                    <Pressable
+                      key={opt.v}
+                      style={[styles.chip, field.value === opt.v && styles.chipActive]}
+                      onPress={() => field.onChange(opt.v)}
+                    >
+                      <Caption style={field.value === opt.v ? { color: theme.colors.white } : undefined}>
+                        {opt.label}
+                      </Caption>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          />
+        </>
+      )}
+
+      {/* categoría objetivo del descuento (para scope='categoria' o producto_gratis) */}
+      {needsCategoriaDescuento && (
+        <Controller
+          control={control}
+          name="scope_descuento_categoria_id"
+          render={({ field }) => (
+            <View style={styles.fieldWrap}>
+              <Label>
+                {tipoDescuento === dto_CrearCondicionRequest.tipo_descuento.PRODUCTO_GRATIS
+                  ? 'Categoría del producto gratuito'
+                  : 'Categoría con descuento'}
+              </Label>
+              <View style={styles.chipPicker}>
+                {categorias.map((cat) => (
+                  <Pressable
+                    key={cat.id}
+                    style={[styles.chip, field.value === cat.id && styles.chipActive]}
+                    onPress={() => cat.id && field.onChange(cat.id)}
+                  >
+                    <Caption style={field.value === cat.id ? { color: theme.colors.white } : undefined}>
+                      {cat.nombre}
+                    </Caption>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+        />
+      )}
 
       <View style={styles.togglesRow}>
         <Pressable
@@ -739,6 +977,31 @@ function CondicionFormModal({
       </View>
     </FormModal>
   );
+}
+
+function buildDefaults(initial?: dto_CondicionResponse): CondicionForm {
+  return {
+    tipo_trigger:
+      (initial?.tipo_trigger as TipoTriggerValue) ??
+      dto_CrearCondicionRequest.tipo_trigger.CONTADOR,
+    dias_semana: initial?.dias_semana ?? [],
+    scope_trigger:
+      (initial?.scope_trigger as dto_CrearCondicionRequest.scope_trigger) ??
+      dto_CrearCondicionRequest.scope_trigger.INFUSIONES,
+    scope_trigger_categoria_id: initial?.scope_trigger_categoria_id ?? null,
+    scope_trigger_producto_id: initial?.scope_trigger_producto_id ?? null,
+    umbral_infusiones: initial?.umbral_infusiones ?? 0,
+    tipo_descuento:
+      (initial?.tipo_descuento as TipoDescuentoValue) ??
+      dto_CrearCondicionRequest.tipo_descuento.PORCENTAJE,
+    valor_descuento: initial?.valor_descuento ?? 0,
+    scope_descuento:
+      (initial?.scope_descuento as dto_CrearCondicionRequest.scope_descuento) ??
+      dto_CrearCondicionRequest.scope_descuento.TOTAL,
+    scope_descuento_categoria_id: initial?.scope_descuento_categoria_id ?? null,
+    reinicia_contador: initial?.reinicia_contador ?? false,
+    vigente: initial?.vigente ?? true,
+  };
 }
 
 // ── styles ───────────────────────────────────────────────────────────────────
@@ -813,7 +1076,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   condCell: { paddingRight: theme.spacing.sm },
-  condCellUmbral: { width: 80 },
+  condCellTrigger: { width: 100 },
   condCellTipo: { width: 100 },
   condCellValor: { width: 90 },
   condCellReinicia: { width: 70, alignItems: 'center' },
@@ -857,6 +1120,16 @@ const styles = StyleSheet.create({
   },
   segBtnActive: { backgroundColor: theme.colors.black },
   segBtnActiveText: { color: theme.colors.surfaceContainerLowest },
+  diasRow: { flexDirection: 'row', gap: theme.spacing.xs, flexWrap: 'wrap' },
+  diaBtn: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.black,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  diaBtnActive: { backgroundColor: theme.colors.black },
   togglesRow: { flexDirection: 'row', gap: theme.spacing.lg, marginTop: theme.spacing.sm },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   toggleBox: {

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -124,16 +125,83 @@ func (r *ClienteRepo) CondicionesPorInstitucion(ctx context.Context, institucion
 	}
 	out := make([]domain.BeneficioDisponible, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, domain.BeneficioDisponible{
+		bd := domain.BeneficioDisponible{
 			CondicionID:      row.CondicionID,
 			BeneficioNombre:  row.BeneficioNombre,
 			UmbralInfusiones: int(row.UmbralInfusiones),
 			TipoDescuento:    row.TipoDescuento,
 			ValorDescuento:   int(row.ValorDescuento),
 			ReiniciaContador: row.ReiniciaContador,
-		})
+			TipoTrigger:      row.TipoTrigger,
+			ScopeTrigger:     row.ScopeTrigger,
+			ScopeDescuento:   row.ScopeDescuento,
+		}
+		for _, d := range row.DiasSemana {
+			bd.DiasSemana = append(bd.DiasSemana, int(d))
+		}
+		if row.ScopeTriggerCategoriaID.Valid {
+			uid := uuid.UUID(row.ScopeTriggerCategoriaID.Bytes)
+			bd.ScopeTriggerCategoriaID = &uid
+		}
+		if row.ScopeTriggerProductoID.Valid {
+			uid := uuid.UUID(row.ScopeTriggerProductoID.Bytes)
+			bd.ScopeTriggerProductoID = &uid
+		}
+		if row.ScopeDescuentoCategoriaID.Valid {
+			uid := uuid.UUID(row.ScopeDescuentoCategoriaID.Bytes)
+			bd.ScopeDescuentoCategoriaID = &uid
+		}
+		out = append(out, bd)
 	}
 	return out, nil
+}
+
+// ContarItemsPorCategoria cuenta ítems del cliente en una categoría desde la fecha dada.
+func (r *ClienteRepo) ContarItemsPorCategoria(ctx context.Context, clienteID, categoriaID uuid.UUID, desde *time.Time) (int, error) {
+	var desdeTs pgtype.Timestamptz
+	if desde != nil {
+		desdeTs = pgtype.Timestamptz{Time: *desde, Valid: true}
+	}
+	n, err := r.q.ContarItemsPorClienteYCategoria(ctx, sqlc.ContarItemsPorClienteYCategoriaParams{
+		ClienteID:   clienteID,
+		CategoriaID: categoriaID,
+		Desde:       desdeTs,
+	})
+	return int(n), err
+}
+
+// ContarItemsPorProducto cuenta ítems del cliente de un producto desde la fecha dada.
+func (r *ClienteRepo) ContarItemsPorProducto(ctx context.Context, clienteID, productoID uuid.UUID, desde *time.Time) (int, error) {
+	var desdeTs pgtype.Timestamptz
+	if desde != nil {
+		desdeTs = pgtype.Timestamptz{Time: *desde, Valid: true}
+	}
+	n, err := r.q.ContarItemsPorClienteYProducto(ctx, sqlc.ContarItemsPorClienteYProductoParams{
+		ClienteID:  clienteID,
+		ProductoID: productoID,
+		Desde:      desdeTs,
+	})
+	return int(n), err
+}
+
+// GetFechaUltimoCanjeCondicion devuelve la fecha del último canje de esta condición para el cliente.
+// Devuelve nil si no hubo canjes previos.
+func (r *ClienteRepo) GetFechaUltimoCanjeCondicion(ctx context.Context, clienteID, condicionID uuid.UUID) (*time.Time, error) {
+	ts, err := r.q.GetFechaUltimoCanjeCondicion(ctx, sqlc.GetFechaUltimoCanjeCondicionParams{
+		ClienteID:   clienteID,
+		CondicionID: condicionID,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !ts.Valid {
+		return nil, nil
+	}
+	t := ts.Time
+	return &t, nil
 }
 
 // ── Mappers ──────────────────────────────────────────────────────────────────

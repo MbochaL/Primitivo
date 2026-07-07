@@ -10,5 +10,11 @@ export type dto_CondicionResponse = {
     umbral_infusiones?: number;
     valor_descuento?: number;
     vigente?: boolean;
+    tipo_trigger?: string;
+    dias_semana?: Array<number>;
+    scope_trigger?: string;
+    scope_trigger_categoria_id?: string | null;
+    scope_trigger_producto_id?: string | null;
+    scope_descuento?: string;
+    scope_descuento_categoria_id?: string | null;
 };
-

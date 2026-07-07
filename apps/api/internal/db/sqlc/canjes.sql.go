@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createCanje = `-- name: CreateCanje :one
@@ -47,4 +48,23 @@ func (q *Queries) CreateCanje(ctx context.Context, arg CreateCanjeParams) (Canje
 		&i.Fecha,
 	)
 	return i, err
+}
+
+const getFechaUltimoCanjeCondicion = `-- name: GetFechaUltimoCanjeCondicion :one
+SELECT fecha FROM canjes
+WHERE cliente_id = $1 AND condicion_id = $2
+ORDER BY fecha DESC
+LIMIT 1
+`
+
+type GetFechaUltimoCanjeCondicionParams struct {
+	ClienteID   uuid.UUID `json:"cliente_id"`
+	CondicionID uuid.UUID `json:"condicion_id"`
+}
+
+func (q *Queries) GetFechaUltimoCanjeCondicion(ctx context.Context, arg GetFechaUltimoCanjeCondicionParams) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, getFechaUltimoCanjeCondicion, arg.ClienteID, arg.CondicionID)
+	var fecha pgtype.Timestamptz
+	err := row.Scan(&fecha)
+	return fecha, err
 }

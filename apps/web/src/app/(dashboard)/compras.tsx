@@ -32,15 +32,45 @@ import { mensajeDeError } from '@/lib/errors';
 
 const moneda = (n: number) => `$ ${n.toLocaleString('es-AR')}`;
 
-function calcularDescuento(b: dto_BeneficioDisponibleResponse | undefined, subtotal: number) {
-  if (!b) return 0;
-  const v = b.valor_descuento ?? 0;
-  return Math.min(b.tipo_descuento === 'porcentaje' ? Math.floor((subtotal * v) / 100) : v, subtotal);
-}
-
 interface Linea {
   producto: dto_ProductoResponse;
   cantidad: number;
+}
+
+function calcularDescuento(
+  b: dto_BeneficioDisponibleResponse | undefined,
+  lineas: Linea[],
+  subtotal: number,
+  catMap: Map<string, string>,
+): number {
+  if (!b) return 0;
+
+  if (b.tipo_descuento === 'producto_gratis') {
+    const catId = b.scope_descuento_categoria_id;
+    const elegibles = lineas.filter(
+      (l) => !catId || catMap.get(l.producto.id ?? '') === catId,
+    );
+    if (!elegibles.length) return 0;
+    return Math.min(...elegibles.map((l) => l.producto.precio ?? 0));
+  }
+
+  const v = b.valor_descuento ?? 0;
+  let base = subtotal;
+  if (b.scope_descuento === 'categoria' && b.scope_descuento_categoria_id) {
+    base = lineas
+      .filter((l) => catMap.get(l.producto.id ?? '') === b.scope_descuento_categoria_id)
+      .reduce((s, l) => s + (l.producto.precio ?? 0) * l.cantidad, 0);
+  }
+  const raw = b.tipo_descuento === 'porcentaje' ? Math.floor((base * v) / 100) : v;
+  return Math.min(raw, subtotal);
+}
+
+function labelBeneficio(b: dto_BeneficioDisponibleResponse): string {
+  const nombre = b.beneficio_nombre ?? '';
+  if (b.tipo_descuento === 'producto_gratis') return `${nombre} · gratis`;
+  const v = b.valor_descuento ?? 0;
+  const desc = b.tipo_descuento === 'porcentaje' ? `${v}%` : `$${v.toLocaleString('es-AR')}`;
+  return `${nombre} · ${desc}`;
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -86,7 +116,16 @@ export default function ComprasScreen() {
   const lineas = Object.values(orden);
   const subtotal = lineas.reduce((s, l) => s + (l.producto.precio ?? 0) * l.cantidad, 0);
   const beneficioSel = beneficiosAlcanzados.find((b) => b.condicion_id === condicionID);
-  const descuento = calcularDescuento(beneficioSel, subtotal);
+
+  const catMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const cat of menuQ.data ?? [])
+      for (const p of cat.productos ?? [])
+        if (p.id && cat.id) m.set(p.id, cat.id);
+    return m;
+  }, [menuQ.data]);
+
+  const descuento = calcularDescuento(beneficioSel, lineas, subtotal, catMap);
   const total = Math.max(0, subtotal - descuento);
 
   const secciones = useMemo(() => {
@@ -390,6 +429,7 @@ export default function ComprasScreen() {
             lineas={lineas}
             tieneCliente={!!cliente}
             beneficiosAlcanzados={beneficiosAlcanzados}
+            beneficioSel={beneficioSel}
             condicionID={condicionID}
             setCondicionID={setCondicionID}
             cambiarCantidad={cambiarCantidad}
@@ -461,6 +501,7 @@ function PedidoPanel({
   lineas,
   tieneCliente,
   beneficiosAlcanzados,
+  beneficioSel,
   condicionID,
   setCondicionID,
   cambiarCantidad,
@@ -473,6 +514,7 @@ function PedidoPanel({
   lineas: Linea[];
   tieneCliente: boolean;
   beneficiosAlcanzados: dto_BeneficioDisponibleResponse[];
+  beneficioSel?: dto_BeneficioDisponibleResponse;
   condicionID: string | null;
   setCondicionID: (id: string | null) => void;
   cambiarCantidad: (id: string, delta: number) => void;
@@ -564,7 +606,7 @@ function PedidoPanel({
                     <Caption
                       style={condicionID === b.condicion_id ? styles.chipTextActive : undefined}
                     >
-                      {b.beneficio_nombre}
+                      {labelBeneficio(b)}
                     </Caption>
                   </Pressable>
                 ))}
@@ -580,7 +622,9 @@ function PedidoPanel({
             </View>
             {descuento > 0 && (
               <View style={styles.totalRow}>
-                <Caption style={{ color: theme.colors.success }}>Beneficio</Caption>
+                <Caption style={{ color: theme.colors.success }}>
+                  {beneficioSel?.tipo_descuento === 'producto_gratis' ? 'Prod. gratis' : 'Beneficio'}
+                </Caption>
                 <Caption style={{ color: theme.colors.success }}>− {moneda(descuento)}</Caption>
               </View>
             )}

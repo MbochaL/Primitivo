@@ -24,15 +24,15 @@ ORDER BY c.fecha DESC
 `
 
 type ListComprasEnRangoRow struct {
-	ID             uuid.UUID          `json:"id"`
-	ClienteID      uuid.UUID          `json:"cliente_id"`
-	UsuarioID      uuid.UUID          `json:"usuario_id"`
-	Subtotal       int32              `json:"subtotal"`
-	Descuento      int32              `json:"descuento"`
-	Total          int32              `json:"total"`
-	Fecha          pgtype.Timestamptz `json:"fecha"`
-	ClienteNombre  string             `json:"cliente_nombre"`
-	ClienteDni     string             `json:"cliente_dni"`
+	ID            uuid.UUID          `json:"id"`
+	ClienteID     uuid.UUID          `json:"cliente_id"`
+	UsuarioID     uuid.UUID          `json:"usuario_id"`
+	Subtotal      int32              `json:"subtotal"`
+	Descuento     int32              `json:"descuento"`
+	Total         int32              `json:"total"`
+	Fecha         pgtype.Timestamptz `json:"fecha"`
+	ClienteNombre string             `json:"cliente_nombre"`
+	ClienteDni    string             `json:"cliente_dni"`
 }
 
 func (q *Queries) ListComprasEnRango(ctx context.Context, desde, hasta pgtype.Timestamptz) ([]ListComprasEnRangoRow, error) {
@@ -154,4 +154,49 @@ func (q *Queries) ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID
 		return nil, err
 	}
 	return items, nil
+}
+
+const contarItemsPorClienteYCategoria = `-- name: ContarItemsPorClienteYCategoria :one
+SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
+FROM detalle_compra dc
+JOIN compras co ON co.id = dc.compra_id
+JOIN productos p ON p.id = dc.producto_id
+WHERE co.cliente_id = $1
+  AND p.categoria_id = $2
+  AND ($3::timestamptz IS NULL OR co.fecha > $3)
+`
+
+type ContarItemsPorClienteYCategoriaParams struct {
+	ClienteID   uuid.UUID          `json:"cliente_id"`
+	CategoriaID uuid.UUID          `json:"categoria_id"`
+	Desde       pgtype.Timestamptz `json:"desde"`
+}
+
+func (q *Queries) ContarItemsPorClienteYCategoria(ctx context.Context, arg ContarItemsPorClienteYCategoriaParams) (int32, error) {
+	row := q.db.QueryRow(ctx, contarItemsPorClienteYCategoria, arg.ClienteID, arg.CategoriaID, arg.Desde)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
+}
+
+const contarItemsPorClienteYProducto = `-- name: ContarItemsPorClienteYProducto :one
+SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
+FROM detalle_compra dc
+JOIN compras co ON co.id = dc.compra_id
+WHERE co.cliente_id = $1
+  AND dc.producto_id = $2
+  AND ($3::timestamptz IS NULL OR co.fecha > $3)
+`
+
+type ContarItemsPorClienteYProductoParams struct {
+	ClienteID  uuid.UUID          `json:"cliente_id"`
+	ProductoID uuid.UUID          `json:"producto_id"`
+	Desde      pgtype.Timestamptz `json:"desde"`
+}
+
+func (q *Queries) ContarItemsPorClienteYProducto(ctx context.Context, arg ContarItemsPorClienteYProductoParams) (int32, error) {
+	row := q.db.QueryRow(ctx, contarItemsPorClienteYProducto, arg.ClienteID, arg.ProductoID, arg.Desde)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
 }

@@ -55,13 +55,20 @@ type Compra struct {
 }
 
 type Condicione struct {
-	ID               uuid.UUID `json:"id"`
-	BeneficioID      uuid.UUID `json:"beneficio_id"`
-	UmbralInfusiones int32     `json:"umbral_infusiones"`
-	TipoDescuento    string    `json:"tipo_descuento"`
-	ValorDescuento   int32     `json:"valor_descuento"`
-	ReiniciaContador bool      `json:"reinicia_contador"`
-	Vigente          bool      `json:"vigente"`
+	ID                        uuid.UUID          `json:"id"`
+	BeneficioID               uuid.UUID          `json:"beneficio_id"`
+	UmbralInfusiones          int32              `json:"umbral_infusiones"`
+	TipoDescuento             string             `json:"tipo_descuento"`
+	ValorDescuento            int32              `json:"valor_descuento"`
+	ReiniciaContador          bool               `json:"reinicia_contador"`
+	Vigente                   bool               `json:"vigente"`
+	TipoTrigger               string             `json:"tipo_trigger"`
+	DiasSemana                []int32            `json:"dias_semana"`
+	ScopeTrigger              string             `json:"scope_trigger"`
+	ScopeTriggerCategoriaID   pgtype.UUID        `json:"scope_trigger_categoria_id"`
+	ScopeTriggerProductoID    pgtype.UUID        `json:"scope_trigger_producto_id"`
+	ScopeDescuento            string             `json:"scope_descuento"`
+	ScopeDescuentoCategoriaID pgtype.UUID        `json:"scope_descuento_categoria_id"`
 }
 
 type DetalleCompra struct {

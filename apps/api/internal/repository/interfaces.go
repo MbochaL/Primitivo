@@ -39,6 +39,11 @@ type ClienteRepository interface {
 	Actualizar(ctx context.Context, c domain.Cliente) (domain.Cliente, error)
 	Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error)
 	CondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]domain.BeneficioDisponible, error)
+
+	// Contadores para triggers dinámicos (scope_trigger='categoria'/'producto')
+	ContarItemsPorCategoria(ctx context.Context, clienteID, categoriaID uuid.UUID, desde *time.Time) (int, error)
+	ContarItemsPorProducto(ctx context.Context, clienteID, productoID uuid.UUID, desde *time.Time) (int, error)
+	GetFechaUltimoCanjeCondicion(ctx context.Context, clienteID, condicionID uuid.UUID) (*time.Time, error)
 }
 
 // MenuRepository abstrae la lectura y escritura del menú (categorías y productos).

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -72,7 +73,6 @@ func (s *ClienteService) Actualizar(ctx context.Context, id uuid.UUID, in Actual
 
 // Historial devuelve las compras del cliente (más recientes primero).
 func (s *ClienteService) Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error) {
-	// Verifica que el cliente exista (404 claro) antes de listar.
 	if _, err := s.clientes.GetByID(ctx, clienteID); err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (s *ClienteService) Historial(ctx context.Context, clienteID uuid.UUID) ([]
 }
 
 // BeneficiosDisponibles evalúa las condiciones vigentes de la institución del cliente
-// y marca cuáles ya alcanzó según su contador de infusiones.
+// y marca cuáles ya alcanzó según su trigger (siempre, días de semana o contador).
 func (s *ClienteService) BeneficiosDisponibles(ctx context.Context, clienteID uuid.UUID) ([]domain.BeneficioDisponible, error) {
 	cliente, err := s.clientes.GetByID(ctx, clienteID)
 	if err != nil {
@@ -93,8 +93,79 @@ func (s *ClienteService) BeneficiosDisponibles(ctx context.Context, clienteID uu
 	if err != nil {
 		return nil, err
 	}
+
+	now := time.Now()
 	for i := range conds {
-		conds[i].Alcanzado = cliente.ContadorInfusiones >= conds[i].UmbralInfusiones
+		conds[i].Alcanzado, err = s.evaluarTrigger(ctx, &conds[i], cliente, clienteID, now)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return conds, nil
+}
+
+// evaluarTrigger determina si la condición está disponible para el cliente ahora.
+func (s *ClienteService) evaluarTrigger(
+	ctx context.Context,
+	c *domain.BeneficioDisponible,
+	cliente domain.ClienteConInstitucion,
+	clienteID uuid.UUID,
+	now time.Time,
+) (bool, error) {
+	switch c.TipoTrigger {
+	case "siempre":
+		return true, nil
+
+	case "dias_semana":
+		weekday := int(now.Weekday())
+		for _, d := range c.DiasSemana {
+			if d == weekday {
+				return true, nil
+			}
+		}
+		return false, nil
+
+	default: // "contador"
+		var count int
+		var err error
+
+		switch c.ScopeTrigger {
+		case "categoria":
+			if c.ScopeTriggerCategoriaID == nil {
+				return false, nil
+			}
+			var desde *time.Time
+			if c.ReiniciaContador {
+				desde, err = s.clientes.GetFechaUltimoCanjeCondicion(ctx, clienteID, c.CondicionID)
+				if err != nil {
+					return false, err
+				}
+			}
+			count, err = s.clientes.ContarItemsPorCategoria(ctx, clienteID, *c.ScopeTriggerCategoriaID, desde)
+			if err != nil {
+				return false, err
+			}
+
+		case "producto":
+			if c.ScopeTriggerProductoID == nil {
+				return false, nil
+			}
+			var desde *time.Time
+			if c.ReiniciaContador {
+				desde, err = s.clientes.GetFechaUltimoCanjeCondicion(ctx, clienteID, c.CondicionID)
+				if err != nil {
+					return false, err
+				}
+			}
+			count, err = s.clientes.ContarItemsPorProducto(ctx, clienteID, *c.ScopeTriggerProductoID, desde)
+			if err != nil {
+				return false, err
+			}
+
+		default: // "infusiones"
+			count = cliente.ContadorInfusiones
+		}
+
+		return count >= c.UmbralInfusiones, nil
+	}
 }
