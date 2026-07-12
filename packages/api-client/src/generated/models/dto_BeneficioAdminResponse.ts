@@ -7,8 +7,8 @@ export type dto_BeneficioAdminResponse = {
     activo?: boolean;
     condiciones?: Array<dto_CondicionResponse>;
     id?: string;
-    institucion_id?: string;
-    institucion_nombre?: string;
+    institucion_id?: string | null;
+    institucion_nombre?: string | null;
     nombre?: string;
 };
 

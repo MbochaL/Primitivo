@@ -54,13 +54,8 @@ func (h *BeneficioHandler) Crear(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
-	instID, err := uuid.Parse(req.InstitucionID)
-	if err != nil {
-		respondValidation(c, err)
-		return
-	}
 	b, err := h.svc.CrearBeneficio(c.Request.Context(), domain.NuevoBeneficio{
-		InstitucionID: instID,
+		InstitucionID: parseUUIDPtr(req.InstitucionID),
 		Nombre:        req.Nombre,
 	})
 	if err != nil {
@@ -69,9 +64,8 @@ func (h *BeneficioHandler) Crear(c *gin.Context) {
 	}
 	// Retornamos el beneficio con detalle (sin condiciones aún).
 	c.JSON(http.StatusCreated, dto.ToBeneficioAdminResponse(domain.BeneficioConDetalle{
-		Beneficio:         b,
-		InstitucionNombre: "",
-		Condiciones:       []domain.Condicion{},
+		Beneficio:   b,
+		Condiciones: []domain.Condicion{},
 	}))
 }
 
@@ -97,14 +91,9 @@ func (h *BeneficioHandler) Actualizar(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
-	instID, err := uuid.Parse(req.InstitucionID)
-	if err != nil {
-		respondValidation(c, err)
-		return
-	}
 	b, err := h.svc.ActualizarBeneficio(c.Request.Context(), domain.ActualizarBeneficioInput{
 		ID:            id,
-		InstitucionID: instID,
+		InstitucionID: parseUUIDPtr(req.InstitucionID),
 		Nombre:        req.Nombre,
 		Activo:        req.Activo,
 	})

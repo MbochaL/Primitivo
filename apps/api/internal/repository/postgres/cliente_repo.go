@@ -118,8 +118,8 @@ func (r *ClienteRepo) Historial(ctx context.Context, clienteID uuid.UUID) ([]dom
 	return compras, nil
 }
 
-func (r *ClienteRepo) CondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]domain.BeneficioDisponible, error) {
-	rows, err := r.q.ListCondicionesPorInstitucion(ctx, institucionID)
+func (r *ClienteRepo) CondicionesPorInstitucion(ctx context.Context, institucionID *uuid.UUID) ([]domain.BeneficioDisponible, error) {
+	rows, err := r.q.ListCondicionesPorInstitucion(ctx, uuidPtrToPgtype(institucionID))
 	if err != nil {
 		return nil, err
 	}

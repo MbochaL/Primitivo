@@ -79,17 +79,14 @@ func (s *ClienteService) Historial(ctx context.Context, clienteID uuid.UUID) ([]
 	return s.clientes.Historial(ctx, clienteID)
 }
 
-// BeneficiosDisponibles evalúa las condiciones vigentes de la institución del cliente
-// y marca cuáles ya alcanzó según su trigger (siempre, días de semana o contador).
+// BeneficiosDisponibles evalúa las condiciones vigentes para el cliente:
+// incluye beneficios de su institución (si tiene) y beneficios globales (sin institución).
 func (s *ClienteService) BeneficiosDisponibles(ctx context.Context, clienteID uuid.UUID) ([]domain.BeneficioDisponible, error) {
 	cliente, err := s.clientes.GetByID(ctx, clienteID)
 	if err != nil {
 		return nil, err
 	}
-	if cliente.InstitucionID == nil {
-		return []domain.BeneficioDisponible{}, nil
-	}
-	conds, err := s.clientes.CondicionesPorInstitucion(ctx, *cliente.InstitucionID)
+	conds, err := s.clientes.CondicionesPorInstitucion(ctx, cliente.InstitucionID)
 	if err != nil {
 		return nil, err
 	}

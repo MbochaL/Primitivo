@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type dto_ActualizarBeneficioRequest = {
     activo?: boolean;
-    institucion_id: string;
+    institucion_id?: string | null;
     nombre: string;
 };
 

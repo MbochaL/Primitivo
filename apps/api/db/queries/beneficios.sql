@@ -1,13 +1,13 @@
 -- name: ListBeneficios :many
 SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
 FROM beneficios b
-JOIN instituciones i ON i.id = b.institucion_id
-ORDER BY i.nombre ASC, b.nombre ASC;
+LEFT JOIN instituciones i ON i.id = b.institucion_id
+ORDER BY i.nombre ASC NULLS LAST, b.nombre ASC;
 
 -- name: GetBeneficioPorID :one
 SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
 FROM beneficios b
-JOIN instituciones i ON i.id = b.institucion_id
+LEFT JOIN instituciones i ON i.id = b.institucion_id
 WHERE b.id = $1;
 
 -- name: CreateBeneficio :one

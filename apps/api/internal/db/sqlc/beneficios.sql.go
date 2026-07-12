@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBeneficio = `-- name: CreateBeneficio :one
@@ -18,8 +19,8 @@ RETURNING id, institucion_id, nombre, activo
 `
 
 type CreateBeneficioParams struct {
-	InstitucionID uuid.UUID `json:"institucion_id"`
-	Nombre        string    `json:"nombre"`
+	InstitucionID pgtype.UUID `json:"institucion_id"`
+	Nombre        string      `json:"nombre"`
 }
 
 func (q *Queries) CreateBeneficio(ctx context.Context, arg CreateBeneficioParams) (Beneficio, error) {
@@ -37,16 +38,16 @@ func (q *Queries) CreateBeneficio(ctx context.Context, arg CreateBeneficioParams
 const getBeneficioPorID = `-- name: GetBeneficioPorID :one
 SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
 FROM beneficios b
-JOIN instituciones i ON i.id = b.institucion_id
+LEFT JOIN instituciones i ON i.id = b.institucion_id
 WHERE b.id = $1
 `
 
 type GetBeneficioPorIDRow struct {
-	ID                uuid.UUID `json:"id"`
-	InstitucionID     uuid.UUID `json:"institucion_id"`
-	Nombre            string    `json:"nombre"`
-	Activo            bool      `json:"activo"`
-	InstitucionNombre string    `json:"institucion_nombre"`
+	ID                uuid.UUID   `json:"id"`
+	InstitucionID     pgtype.UUID `json:"institucion_id"`
+	Nombre            string      `json:"nombre"`
+	Activo            bool        `json:"activo"`
+	InstitucionNombre pgtype.Text `json:"institucion_nombre"`
 }
 
 func (q *Queries) GetBeneficioPorID(ctx context.Context, id uuid.UUID) (GetBeneficioPorIDRow, error) {
@@ -65,16 +66,16 @@ func (q *Queries) GetBeneficioPorID(ctx context.Context, id uuid.UUID) (GetBenef
 const listBeneficios = `-- name: ListBeneficios :many
 SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
 FROM beneficios b
-JOIN instituciones i ON i.id = b.institucion_id
-ORDER BY i.nombre ASC, b.nombre ASC
+LEFT JOIN instituciones i ON i.id = b.institucion_id
+ORDER BY i.nombre ASC NULLS LAST, b.nombre ASC
 `
 
 type ListBeneficiosRow struct {
-	ID                uuid.UUID `json:"id"`
-	InstitucionID     uuid.UUID `json:"institucion_id"`
-	Nombre            string    `json:"nombre"`
-	Activo            bool      `json:"activo"`
-	InstitucionNombre string    `json:"institucion_nombre"`
+	ID                uuid.UUID   `json:"id"`
+	InstitucionID     pgtype.UUID `json:"institucion_id"`
+	Nombre            string      `json:"nombre"`
+	Activo            bool        `json:"activo"`
+	InstitucionNombre pgtype.Text `json:"institucion_nombre"`
 }
 
 func (q *Queries) ListBeneficios(ctx context.Context) ([]ListBeneficiosRow, error) {
@@ -132,10 +133,10 @@ RETURNING id, institucion_id, nombre, activo
 `
 
 type UpdateBeneficioParams struct {
-	ID            uuid.UUID `json:"id"`
-	Nombre        string    `json:"nombre"`
-	Activo        bool      `json:"activo"`
-	InstitucionID uuid.UUID `json:"institucion_id"`
+	ID            uuid.UUID   `json:"id"`
+	Nombre        string      `json:"nombre"`
+	Activo        bool        `json:"activo"`
+	InstitucionID pgtype.UUID `json:"institucion_id"`
 }
 
 func (q *Queries) UpdateBeneficio(ctx context.Context, arg UpdateBeneficioParams) (Beneficio, error) {

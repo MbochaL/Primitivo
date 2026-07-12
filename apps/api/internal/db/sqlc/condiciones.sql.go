@@ -112,7 +112,7 @@ type GetCondicionParaCanjeRow struct {
 	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
 	ScopeDescuento            string      `json:"scope_descuento"`
 	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
-	InstitucionID             uuid.UUID   `json:"institucion_id"`
+	InstitucionID             pgtype.UUID `json:"institucion_id"`
 	BeneficioActivo           bool        `json:"beneficio_activo"`
 }
 
@@ -198,7 +198,7 @@ SELECT
     b.nombre AS beneficio_nombre
 FROM condiciones c
 JOIN beneficios b ON b.id = c.beneficio_id
-WHERE b.institucion_id = $1
+WHERE (b.institucion_id = $1 OR b.institucion_id IS NULL)
   AND c.vigente = true
   AND b.activo = true
 ORDER BY c.umbral_infusiones ASC
@@ -220,7 +220,7 @@ type ListCondicionesPorInstitucionRow struct {
 	BeneficioNombre           string      `json:"beneficio_nombre"`
 }
 
-func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error) {
+func (q *Queries) ListCondicionesPorInstitucion(ctx context.Context, institucionID pgtype.UUID) ([]ListCondicionesPorInstitucionRow, error) {
 	rows, err := q.db.Query(ctx, listCondicionesPorInstitucion, institucionID)
 	if err != nil {
 		return nil, err

@@ -88,7 +88,7 @@ const formatTrigger = (c: dto_CondicionResponse) => {
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
 const beneficioSchema = z.object({
-  institucion_id: z.string().uuid('Seleccioná una institución'),
+  institucion_id: z.string().uuid().nullable().optional(),
   nombre: z.string().min(1, 'Nombre requerido'),
   activo: z.boolean().default(true),
 });
@@ -187,7 +187,7 @@ export default function BeneficiosScreen() {
     return filtrados.slice(0, 8).map((b) => ({
       id: b.id ?? '',
       label: b.nombre ?? '',
-      sublabel: b.institucion_nombre,
+      sublabel: b.institucion_nombre ?? 'Global',
       meta: b.condiciones?.length ? `${b.condiciones.length} cond.` : undefined,
       icon: 'loyalty' as const,
       inactive: !b.activo,
@@ -425,7 +425,7 @@ function BeneficioCard({
       <View style={styles.cardHeader}>
         <View style={styles.cardMeta}>
           <Caption style={styles.instLabel}>
-            {beneficio.institucion_nombre?.toUpperCase() ?? ''}
+            {beneficio.institucion_nombre ? beneficio.institucion_nombre.toUpperCase() : 'GLOBAL'}
           </Caption>
           <View style={styles.cardTitleRow}>
             <Heading>{beneficio.nombre}</Heading>
@@ -561,7 +561,7 @@ function BeneficioFormModal({
   } = useForm<BeneficioForm>({
     resolver: zodResolver(beneficioSchema),
     defaultValues: {
-      institucion_id: initial?.institucion_id ?? '',
+      institucion_id: initial?.institucion_id ?? null,
       nombre: initial?.nombre ?? '',
       activo: initial?.activo ?? true,
     },
@@ -569,7 +569,7 @@ function BeneficioFormModal({
 
   useEffect(() => {
     reset({
-      institucion_id: initial?.institucion_id ?? '',
+      institucion_id: initial?.institucion_id ?? null,
       nombre: initial?.nombre ?? '',
       activo: initial?.activo ?? true,
     });
@@ -613,6 +613,15 @@ function BeneficioFormModal({
           <View style={styles.fieldWrap}>
             <Label>Institución</Label>
             <View style={styles.chipPicker}>
+              {/* Opción global */}
+              <Pressable
+                style={[styles.chip, !field.value && styles.chipActive]}
+                onPress={() => field.onChange(null)}
+              >
+                <Caption style={!field.value ? { color: theme.colors.white } : undefined}>
+                  Global (todos)
+                </Caption>
+              </Pressable>
               {instituciones.map((inst) => (
                 <Pressable
                   key={inst.id}
@@ -622,7 +631,7 @@ function BeneficioFormModal({
                   <Caption
                     style={
                       field.value === inst.id
-                        ? { color: theme.colors.surfaceContainerLowest }
+                        ? { color: theme.colors.white }
                         : undefined
                     }
                   >
@@ -631,11 +640,6 @@ function BeneficioFormModal({
                 </Pressable>
               ))}
             </View>
-            {errors.institucion_id && (
-              <Caption style={{ color: theme.colors.danger }}>
-                {errors.institucion_id.message}
-              </Caption>
-            )}
           </View>
         )}
       />

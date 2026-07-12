@@ -110,16 +110,18 @@ type ActualizarProductoRequest struct {
 // ── Beneficios admin ─────────────────────────────────────────────────────────
 
 // CrearBeneficioRequest es el cuerpo de POST /beneficios.
+// InstitucionID omitido o vacío crea un beneficio global (aplica a todos los clientes).
 type CrearBeneficioRequest struct {
-	InstitucionID string `json:"institucion_id" binding:"required,uuid"`
-	Nombre        string `json:"nombre" binding:"required"`
+	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
+	Nombre        string  `json:"nombre" binding:"required"`
 }
 
 // ActualizarBeneficioRequest es el cuerpo de PUT /beneficios/:id.
+// InstitucionID omitido o vacío convierte el beneficio en global.
 type ActualizarBeneficioRequest struct {
-	InstitucionID string `json:"institucion_id" binding:"required,uuid"`
-	Nombre        string `json:"nombre" binding:"required"`
-	Activo        bool   `json:"activo"`
+	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
+	Nombre        string  `json:"nombre" binding:"required"`
+	Activo        bool    `json:"activo"`
 }
 
 // CrearCondicionRequest es el cuerpo de POST /beneficios/:id/condiciones.

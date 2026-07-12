@@ -371,10 +371,11 @@ type CondicionResponse struct {
 }
 
 // BeneficioAdminResponse expone el beneficio con su institución y condiciones (admin).
+// InstitucionID e InstitucionNombre son nil para beneficios globales.
 type BeneficioAdminResponse struct {
 	ID                string              `json:"id"`
-	InstitucionID     string              `json:"institucion_id"`
-	InstitucionNombre string              `json:"institucion_nombre"`
+	InstitucionID     *string             `json:"institucion_id"`
+	InstitucionNombre *string             `json:"institucion_nombre"`
 	Nombre            string              `json:"nombre"`
 	Activo            bool                `json:"activo"`
 	Condiciones       []CondicionResponse `json:"condiciones"`
@@ -388,7 +389,7 @@ func ToBeneficioAdminResponse(b domain.BeneficioConDetalle) BeneficioAdminRespon
 	}
 	return BeneficioAdminResponse{
 		ID:                b.ID.String(),
-		InstitucionID:     b.InstitucionID.String(),
+		InstitucionID:     uuidPtrToString(b.InstitucionID),
 		InstitucionNombre: b.InstitucionNombre,
 		Nombre:            b.Nombre,
 		Activo:            b.Activo,

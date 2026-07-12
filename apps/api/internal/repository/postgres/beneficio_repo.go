@@ -28,12 +28,16 @@ func NewBeneficioRepo(pool *pgxpool.Pool) *BeneficioRepo {
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 func toBeneficio(row sqlc.Beneficio) domain.Beneficio {
-	return domain.Beneficio{
-		ID:            row.ID,
-		InstitucionID: row.InstitucionID,
-		Nombre:        row.Nombre,
-		Activo:        row.Activo,
+	b := domain.Beneficio{
+		ID:     row.ID,
+		Nombre: row.Nombre,
+		Activo: row.Activo,
 	}
+	if row.InstitucionID.Valid {
+		uid := uuid.UUID(row.InstitucionID.Bytes)
+		b.InstitucionID = &uid
+	}
+	return b
 }
 
 func toCondicion(row sqlc.Condicione) domain.Condicion {
@@ -110,14 +114,18 @@ func (r *BeneficioRepo) ListBeneficios(ctx context.Context) ([]domain.BeneficioC
 		if conds == nil {
 			conds = []domain.Condicion{}
 		}
+		b := domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}
+		if row.InstitucionID.Valid {
+			uid := uuid.UUID(row.InstitucionID.Bytes)
+			b.InstitucionID = &uid
+		}
+		var instNombre *string
+		if row.InstitucionNombre.Valid {
+			instNombre = &row.InstitucionNombre.String
+		}
 		out = append(out, domain.BeneficioConDetalle{
-			Beneficio: domain.Beneficio{
-				ID:            row.ID,
-				InstitucionID: row.InstitucionID,
-				Nombre:        row.Nombre,
-				Activo:        row.Activo,
-			},
-			InstitucionNombre: row.InstitucionNombre,
+			Beneficio:         b,
+			InstitucionNombre: instNombre,
 			Condiciones:       conds,
 		})
 	}
@@ -140,21 +148,25 @@ func (r *BeneficioRepo) GetBeneficio(ctx context.Context, id uuid.UUID) (domain.
 	for _, c := range condRows {
 		conds = append(conds, toCondicion(c))
 	}
+	b := domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}
+	if row.InstitucionID.Valid {
+		uid := uuid.UUID(row.InstitucionID.Bytes)
+		b.InstitucionID = &uid
+	}
+	var instNombre *string
+	if row.InstitucionNombre.Valid {
+		instNombre = &row.InstitucionNombre.String
+	}
 	return domain.BeneficioConDetalle{
-		Beneficio: domain.Beneficio{
-			ID:            row.ID,
-			InstitucionID: row.InstitucionID,
-			Nombre:        row.Nombre,
-			Activo:        row.Activo,
-		},
-		InstitucionNombre: row.InstitucionNombre,
+		Beneficio:         b,
+		InstitucionNombre: instNombre,
 		Condiciones:       conds,
 	}, nil
 }
 
 func (r *BeneficioRepo) CrearBeneficio(ctx context.Context, n domain.NuevoBeneficio) (domain.Beneficio, error) {
 	row, err := r.q.CreateBeneficio(ctx, sqlc.CreateBeneficioParams{
-		InstitucionID: n.InstitucionID,
+		InstitucionID: uuidPtrToPgtype(n.InstitucionID),
 		Nombre:        n.Nombre,
 	})
 	if err != nil {
@@ -168,7 +180,7 @@ func (r *BeneficioRepo) ActualizarBeneficio(ctx context.Context, u domain.Actual
 		ID:            u.ID,
 		Nombre:        u.Nombre,
 		Activo:        u.Activo,
-		InstitucionID: u.InstitucionID,
+		InstitucionID: uuidPtrToPgtype(u.InstitucionID),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Beneficio{}, domain.ErrBeneficioNoEncontrado

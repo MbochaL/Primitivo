@@ -41,7 +41,7 @@ type Querier interface {
 	ListClientes(ctx context.Context) ([]ListClientesRow, error)
 	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)
 	ListCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) ([]Condicione, error)
-	ListCondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]ListCondicionesPorInstitucionRow, error)
+	ListCondicionesPorInstitucion(ctx context.Context, institucionID pgtype.UUID) ([]ListCondicionesPorInstitucionRow, error)
 	ListInstituciones(ctx context.Context) ([]Institucione, error)
 	ListProductosActivos(ctx context.Context) ([]Producto, error)
 	ListTodasCondiciones(ctx context.Context) ([]Condicione, error)

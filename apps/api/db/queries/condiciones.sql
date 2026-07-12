@@ -15,7 +15,7 @@ SELECT
     b.nombre AS beneficio_nombre
 FROM condiciones c
 JOIN beneficios b ON b.id = c.beneficio_id
-WHERE b.institucion_id = $1
+WHERE (b.institucion_id = $1 OR b.institucion_id IS NULL)
   AND c.vigente = true
   AND b.activo = true
 ORDER BY c.umbral_infusiones ASC;

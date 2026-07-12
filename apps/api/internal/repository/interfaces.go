@@ -38,7 +38,7 @@ type ClienteRepository interface {
 	List(ctx context.Context) ([]domain.ClienteConInstitucion, error)
 	Actualizar(ctx context.Context, c domain.Cliente) (domain.Cliente, error)
 	Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error)
-	CondicionesPorInstitucion(ctx context.Context, institucionID uuid.UUID) ([]domain.BeneficioDisponible, error)
+	CondicionesPorInstitucion(ctx context.Context, institucionID *uuid.UUID) ([]domain.BeneficioDisponible, error)
 
 	// Contadores para triggers dinámicos (scope_trigger='categoria'/'producto')
 	ContarItemsPorCategoria(ctx context.Context, clienteID, categoriaID uuid.UUID, desde *time.Time) (int, error)
