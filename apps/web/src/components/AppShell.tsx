@@ -158,6 +158,7 @@ function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) 
           horizontal
           showsHorizontalScrollIndicator={false}
           bounces={false}
+          style={styles.bottomnavScrollOuter}
           contentContainerStyle={styles.bottomnavScroll}
         >
           {tabs}
@@ -250,9 +251,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   bottomnavRow: { flexDirection: 'row' },
-  bottomnavScroll: { flexDirection: 'row' },
+  bottomnavScrollOuter: { flex: 1 },
+  bottomnavScroll: { flexDirection: 'row', alignItems: 'stretch' },
   tab: {
     flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.sm,
