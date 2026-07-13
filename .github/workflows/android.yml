@@ -31,8 +31,6 @@ jobs:
 
       - name: Prebuild Android
         working-directory: apps/web
-        env:
-          EXPO_PUBLIC_API_URL: https://primitivo.onrender.com/api/v1
         run: npx expo prebuild --platform android --clean --no-install
 
       - name: Build APK
@@ -40,6 +38,7 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+          EXPO_PUBLIC_API_URL: https://primitivo.onrender.com/api/v1
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
