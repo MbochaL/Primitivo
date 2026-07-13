@@ -79,6 +79,27 @@ func (h *CompraHandler) Registrar(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.ToCompraRegistradaResponse(compra))
 }
 
+// Eliminar godoc
+//
+//	@Summary	Eliminar una compra (admin)
+//	@Tags		compras
+//	@Security	BearerAuth
+//	@Param		id	path	string	true	"ID compra"
+//	@Success	204
+//	@Failure	404	{object}	response.ErrorResponse
+//	@Router		/compras/{id} [delete]
+func (h *CompraHandler) Eliminar(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.compras.EliminarCompra(c.Request.Context(), id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // List godoc
 //
 //	@Summary	Listar compras en un rango de fechas (admin)

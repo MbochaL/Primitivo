@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/martinbosch1996/primitivo/apps/api/internal/domain"
 	"github.com/martinbosch1996/primitivo/apps/api/internal/repository"
 )
@@ -29,4 +31,9 @@ func (s *CompraService) RegistrarCompra(ctx context.Context, n domain.NuevaCompr
 // ListEnRango devuelve el historial global de compras en el rango [desde, hasta).
 func (s *CompraService) ListEnRango(ctx context.Context, desde, hasta time.Time) ([]domain.CompraConCliente, error) {
 	return s.compras.ListEnRango(ctx, desde, hasta)
+}
+
+// EliminarCompra borra una compra por ID (solo admin). Canjes y detalle cascadean.
+func (s *CompraService) EliminarCompra(ctx context.Context, id uuid.UUID) error {
+	return s.compras.EliminarCompra(ctx, id)
 }

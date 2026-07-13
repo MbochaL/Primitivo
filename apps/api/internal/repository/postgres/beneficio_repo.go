@@ -205,6 +205,18 @@ func (r *BeneficioRepo) DesactivarBeneficio(ctx context.Context, id uuid.UUID) (
 	return toBeneficio(row), nil
 }
 
+// EliminarBeneficio borra el beneficio. Condiciones y canjes cascadean via FK.
+func (r *BeneficioRepo) EliminarBeneficio(ctx context.Context, id uuid.UUID) error {
+	ct, err := r.pool.Exec(ctx, "DELETE FROM beneficios WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return domain.ErrBeneficioNoEncontrado
+	}
+	return nil
+}
+
 // ── Condiciones ───────────────────────────────────────────────────────────────
 
 func (r *BeneficioRepo) CrearCondicion(ctx context.Context, n domain.NuevaCondicion) (domain.Condicion, error) {

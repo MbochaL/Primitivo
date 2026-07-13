@@ -67,6 +67,20 @@ func (r *InstitucionRepo) Actualizar(ctx context.Context, i domain.Institucion) 
 	return aInstitucionDominio(row), nil
 }
 
+// Eliminar nullifica las FKs de clientes y beneficios hacia esta institución y luego la borra.
+func (r *InstitucionRepo) Eliminar(ctx context.Context, id uuid.UUID) error {
+	if _, err := r.q.GetInstitucionByID(ctx, id); err != nil {
+		return err
+	}
+	if err := r.q.NullifyClientesInstitucion(ctx, id); err != nil {
+		return err
+	}
+	if err := r.q.NullifyBeneficiosInstitucion(ctx, id); err != nil {
+		return err
+	}
+	return r.q.DeleteInstitucion(ctx, id)
+}
+
 func aInstitucionDominio(row sqlc.Institucione) domain.Institucion {
 	return domain.Institucion{
 		ID:        row.ID,

@@ -260,6 +260,18 @@ func (r *CompraRepo) ListEnRango(ctx context.Context, desde, hasta time.Time) ([
 	return out, nil
 }
 
+// EliminarCompra borra una compra por ID. Los canjes y el detalle cascaden via FK.
+func (r *CompraRepo) EliminarCompra(ctx context.Context, id uuid.UUID) error {
+	ct, err := r.pool.Exec(ctx, "DELETE FROM compras WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return domain.ErrCompraNoEncontrada
+	}
+	return nil
+}
+
 // ── helpers privados ──────────────────────────────────────────────────────────
 
 // ultimoCanje obtiene la fecha del último canje de esta condición para el cliente.

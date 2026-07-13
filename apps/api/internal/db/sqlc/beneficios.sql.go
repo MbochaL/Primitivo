@@ -155,3 +155,23 @@ func (q *Queries) UpdateBeneficio(ctx context.Context, arg UpdateBeneficioParams
 	)
 	return i, err
 }
+
+const countCanjesPorBeneficio = `-- name: CountCanjesPorBeneficio :one
+SELECT COUNT(*) FROM canjes WHERE beneficio_id = $1
+`
+
+func (q *Queries) CountCanjesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countCanjesPorBeneficio, beneficioID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const deleteBeneficio = `-- name: DeleteBeneficio :exec
+DELETE FROM beneficios WHERE id = $1
+`
+
+func (q *Queries) DeleteBeneficio(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteBeneficio, id)
+	return err
+}

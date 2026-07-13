@@ -69,6 +69,9 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 			admin := protegidas.Group("")
 			admin.Use(middleware.RequireRole(string(domain.RolAdministrador)))
 			{
+				// Importación masiva de clientes
+				admin.POST("/clientes/importar", h.Cliente.ImportarClientes)
+
 				// Usuarios del sistema
 				admin.GET("/usuarios", h.Usuario.List)
 				admin.POST("/usuarios", h.Usuario.Crear)
@@ -78,6 +81,7 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 				// Instituciones (escritura)
 				admin.POST("/instituciones", h.Institucion.Crear)
 				admin.PUT("/instituciones/:id", h.Institucion.Actualizar)
+				admin.DELETE("/instituciones/:id", h.Institucion.Eliminar)
 
 				// Menú — gestión admin
 				admin.GET("/categorias", h.Menu.ListCategorias)
@@ -91,12 +95,13 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 
 				// Historial global de compras
 				admin.GET("/compras", h.Compra.List)
+				admin.DELETE("/compras/:id", h.Compra.Eliminar)
 
 				// Beneficios y condiciones
 				admin.GET("/beneficios", h.Beneficio.List)
 				admin.POST("/beneficios", h.Beneficio.Crear)
 				admin.PUT("/beneficios/:id", h.Beneficio.Actualizar)
-				admin.DELETE("/beneficios/:id", h.Beneficio.Desactivar)
+				admin.DELETE("/beneficios/:id", h.Beneficio.Eliminar)
 				admin.POST("/beneficios/:id/condiciones", h.Beneficio.CrearCondicion)
 				admin.PUT("/condiciones/:id", h.Beneficio.ActualizarCondicion)
 			}

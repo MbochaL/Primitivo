@@ -28,6 +28,7 @@ type InstitucionRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (domain.Institucion, error)
 	List(ctx context.Context) ([]domain.Institucion, error)
 	Actualizar(ctx context.Context, i domain.Institucion) (domain.Institucion, error)
+	Eliminar(ctx context.Context, id uuid.UUID) error
 }
 
 // ClienteRepository abstrae la persistencia de los clientes y sus vistas asociadas.
@@ -74,6 +75,7 @@ type BeneficioRepository interface {
 	CrearBeneficio(ctx context.Context, n domain.NuevoBeneficio) (domain.Beneficio, error)
 	ActualizarBeneficio(ctx context.Context, u domain.ActualizarBeneficioInput) (domain.Beneficio, error)
 	DesactivarBeneficio(ctx context.Context, id uuid.UUID) (domain.Beneficio, error)
+	EliminarBeneficio(ctx context.Context, id uuid.UUID) error
 
 	CrearCondicion(ctx context.Context, n domain.NuevaCondicion) (domain.Condicion, error)
 	ActualizarCondicion(ctx context.Context, u domain.ActualizarCondicionInput) (domain.Condicion, error)
@@ -83,4 +85,5 @@ type BeneficioRepository interface {
 type CompraRepository interface {
 	RegistrarCompra(ctx context.Context, n domain.NuevaCompra) (domain.Compra, error)
 	ListEnRango(ctx context.Context, desde, hasta time.Time) ([]domain.CompraConCliente, error)
+	EliminarCompra(ctx context.Context, id uuid.UUID) error
 }

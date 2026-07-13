@@ -363,3 +363,12 @@ func (q *Queries) UpdateCondicion(ctx context.Context, arg UpdateCondicionParams
 	)
 	return i, err
 }
+
+const deleteCondicionesPorBeneficio = `-- name: DeleteCondicionesPorBeneficio :exec
+DELETE FROM condiciones WHERE beneficio_id = $1
+`
+
+func (q *Queries) DeleteCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCondicionesPorBeneficio, beneficioID)
+	return err
+}

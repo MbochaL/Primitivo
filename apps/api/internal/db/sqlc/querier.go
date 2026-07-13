@@ -14,6 +14,7 @@ import (
 type Querier interface {
 	ContarItemsPorClienteYCategoria(ctx context.Context, arg ContarItemsPorClienteYCategoriaParams) (int32, error)
 	ContarItemsPorClienteYProducto(ctx context.Context, arg ContarItemsPorClienteYProductoParams) (int32, error)
+	CountCanjesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) (int64, error)
 	CreateBeneficio(ctx context.Context, arg CreateBeneficioParams) (Beneficio, error)
 	CreateCanje(ctx context.Context, arg CreateCanjeParams) (Canje, error)
 	CreateCategoria(ctx context.Context, arg CreateCategoriaParams) (Categoria, error)
@@ -22,6 +23,10 @@ type Querier interface {
 	CreateCondicion(ctx context.Context, arg CreateCondicionParams) (Condicione, error)
 	CreateDetalleCompra(ctx context.Context, arg CreateDetalleCompraParams) error
 	CreateInstitucion(ctx context.Context, nombre string) (Institucione, error)
+	DeleteBeneficio(ctx context.Context, id uuid.UUID) error
+	DeleteCompra(ctx context.Context, id uuid.UUID) error
+	DeleteCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) error
+	DeleteInstitucion(ctx context.Context, id uuid.UUID) error
 	CreateProducto(ctx context.Context, arg CreateProductoParams) (Producto, error)
 	CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (UsuariosSistema, error)
 	GetBeneficioPorID(ctx context.Context, id uuid.UUID) (GetBeneficioPorIDRow, error)
@@ -37,6 +42,8 @@ type Querier interface {
 	IncrementarContadorInfusiones(ctx context.Context, arg IncrementarContadorInfusionesParams) error
 	ListAllProductos(ctx context.Context) ([]Producto, error)
 	ListBeneficios(ctx context.Context) ([]ListBeneficiosRow, error)
+	NullifyBeneficiosInstitucion(ctx context.Context, id uuid.UUID) error
+	NullifyClientesInstitucion(ctx context.Context, id uuid.UUID) error
 	ListCategorias(ctx context.Context) ([]Categoria, error)
 	ListClientes(ctx context.Context) ([]ListClientesRow, error)
 	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)

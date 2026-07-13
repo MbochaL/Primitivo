@@ -60,6 +60,9 @@ INSERT INTO condiciones (
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 RETURNING *;
 
+-- name: DeleteCondicionesPorBeneficio :exec
+DELETE FROM condiciones WHERE beneficio_id = $1;
+
 -- name: UpdateCondicion :one
 UPDATE condiciones
 SET umbral_infusiones            = $2,

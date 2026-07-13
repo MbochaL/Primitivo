@@ -224,11 +224,11 @@ export default function BeneficiosScreen() {
     onError: (e) => toast.error(mensajeDeError(e)),
   });
 
-  const desactivarBeneficio = useMutation({
+  const eliminarBeneficio = useMutation({
     mutationFn: (id: string) => BeneficiosService.deleteBeneficios(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['beneficios'] });
-      toast.success('Beneficio desactivado');
+      toast.success('Beneficio eliminado');
       setDeleteTarget(null);
     },
     onError: (e) => {
@@ -386,11 +386,11 @@ export default function BeneficiosScreen() {
 
       <ConfirmDialog
         visible={!!deleteTarget}
-        title="¿Desactivar beneficio?"
-        message={`"${deleteTarget?.nombre}" dejará de estar disponible para los clientes. Podés reactivarlo desde el formulario de edición.`}
-        confirmLabel="Desactivar"
-        loading={desactivarBeneficio.isPending}
-        onConfirm={() => deleteTarget?.id && desactivarBeneficio.mutate(deleteTarget.id)}
+        title="¿Eliminar beneficio?"
+        message={`"${deleteTarget?.nombre}" será eliminado permanentemente junto con todas sus condiciones. Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        loading={eliminarBeneficio.isPending}
+        onConfirm={() => deleteTarget?.id && eliminarBeneficio.mutate(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
       />
     </Screen>
@@ -449,7 +449,7 @@ function BeneficioCard({
               <Pressable
                 style={[styles.iconBtn, styles.iconBtnDanger]}
                 onPress={onDesactivar}
-                accessibilityLabel="Desactivar beneficio"
+                accessibilityLabel="Eliminar beneficio"
               >
                 <Icon name="delete" size={18} color={theme.colors.danger} />
               </Pressable>

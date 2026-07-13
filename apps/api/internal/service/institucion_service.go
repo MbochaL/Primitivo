@@ -44,3 +44,8 @@ func (s *InstitucionService) Actualizar(ctx context.Context, id uuid.UUID, in Ac
 		Activa: in.Activa,
 	})
 }
+
+// Eliminar desvincula clientes y beneficios de la institución y luego la borra.
+func (s *InstitucionService) Eliminar(ctx context.Context, id uuid.UUID) error {
+	return s.instituciones.Eliminar(ctx, id)
+}

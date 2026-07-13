@@ -40,6 +40,26 @@ export class InstitucionesService {
         });
     }
     /**
+     * Eliminar una institución (admin)
+     * @param id ID de la institución
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteInstituciones(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/instituciones/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Not Found`,
+            },
+        });
+    }
+    /**
      * Actualizar una institución
      * @param id ID de la institución
      * @param requestBody Datos a actualizar

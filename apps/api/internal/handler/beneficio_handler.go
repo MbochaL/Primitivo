@@ -118,7 +118,7 @@ func (h *BeneficioHandler) Actualizar(c *gin.Context) {
 //	@Security	BearerAuth
 //	@Param		id	path		string	true	"ID beneficio"
 //	@Success	200	{object}	dto.BeneficioAdminResponse
-//	@Router		/beneficios/{id} [delete]
+//	@Router		/beneficios/{id}/desactivar [post]
 func (h *BeneficioHandler) Desactivar(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -134,6 +134,30 @@ func (h *BeneficioHandler) Desactivar(c *gin.Context) {
 		Beneficio:   b,
 		Condiciones: []domain.Condicion{},
 	}))
+}
+
+// Eliminar godoc
+//
+//	@Summary	Eliminar beneficio permanentemente (admin)
+//	@Tags		beneficios
+//	@Produce	json
+//	@Security	BearerAuth
+//	@Param		id	path	string	true	"ID beneficio"
+//	@Success	204
+//	@Failure	404	{object}	response.ErrorResponse
+//	@Failure	409	{object}	response.ErrorResponse
+//	@Router		/beneficios/{id} [delete]
+func (h *BeneficioHandler) Eliminar(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		respondValidation(c, err)
+		return
+	}
+	if err := h.svc.EliminarBeneficio(c.Request.Context(), id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // CrearCondicion godoc

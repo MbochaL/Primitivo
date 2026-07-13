@@ -32,6 +32,22 @@ export class ComprasService {
      * @returns dto_CompraRegistradaResponse Created
      * @throws ApiError
      */
+    /**
+     * Eliminar una compra (admin)
+     * @param id ID compra
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteCompras(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/compras/{id}',
+            path: { 'id': id },
+            errors: { 404: `Not Found` },
+        });
+    }
     public static postCompras(
         requestBody: dto_RegistrarCompraRequest,
     ): CancelablePromise<dto_CompraRegistradaResponse> {

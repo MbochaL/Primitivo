@@ -105,12 +105,14 @@ function InstitucionesContent() {
     onError: (e) => toast.error(mensajeDeError(e)),
   });
 
-  const desactivar = useMutation({
+  const eliminar = useMutation({
     mutationFn: (inst: dto_InstitucionResponse) =>
-      InstitucionesService.putInstituciones(inst.id!, { nombre: inst.nombre!, activa: false }),
+      InstitucionesService.deleteInstituciones(inst.id!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['instituciones'] });
-      toast.success('Institución desactivada');
+      qc.invalidateQueries({ queryKey: ['clientes'] });
+      qc.invalidateQueries({ queryKey: ['beneficios'] });
+      toast.success('Institución eliminada');
       setDeleteTarget(null);
     },
     onError: (e) => {
@@ -165,15 +167,13 @@ function InstitucionesContent() {
       >
         <Icon name="edit" size={18} color={theme.colors.black} />
       </Pressable>
-      {inst.activa && (
-        <Pressable
-          style={[styles.iconBtn, styles.iconBtnDanger]}
-          onPress={() => setDeleteTarget(inst)}
-          accessibilityLabel="Desactivar institución"
-        >
-          <Icon name="delete" size={18} color={theme.colors.danger} />
-        </Pressable>
-      )}
+      <Pressable
+        style={[styles.iconBtn, styles.iconBtnDanger]}
+        onPress={() => setDeleteTarget(inst)}
+        accessibilityLabel="Eliminar institución"
+      >
+        <Icon name="delete" size={18} color={theme.colors.danger} />
+      </Pressable>
     </View>
   );
 
@@ -239,11 +239,11 @@ function InstitucionesContent() {
 
       <ConfirmDialog
         visible={!!deleteTarget}
-        title="¿Desactivar institución?"
-        message={`"${deleteTarget?.nombre}" dejará de estar disponible. Los clientes y beneficios asociados se conservan.`}
-        confirmLabel="Desactivar"
-        loading={desactivar.isPending}
-        onConfirm={() => deleteTarget && desactivar.mutate(deleteTarget)}
+        title="¿Eliminar institución?"
+        message={`"${deleteTarget?.nombre}" será eliminada permanentemente. Los clientes y beneficios asociados quedarán sin institución.`}
+        confirmLabel="Eliminar"
+        loading={eliminar.isPending}
+        onConfirm={() => deleteTarget && eliminar.mutate(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
       />
     </Screen>

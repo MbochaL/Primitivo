@@ -99,3 +99,25 @@ func (h *InstitucionHandler) Actualizar(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.ToInstitucionResponse(institucion))
 }
+
+// Eliminar godoc
+//
+//	@Summary	Eliminar una institución (admin)
+//	@Tags		instituciones
+//	@Produce	json
+//	@Security	BearerAuth
+//	@Param		id	path	string	true	"ID de la institución"
+//	@Success	204
+//	@Failure	404	{object}	response.ErrorResponse
+//	@Router		/instituciones/{id} [delete]
+func (h *InstitucionHandler) Eliminar(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.instituciones.Eliminar(c.Request.Context(), id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

@@ -26,6 +26,8 @@ var (
 	ErrBeneficioNoEncontrado  = errors.New("beneficio no encontrado")
 	ErrCondicionNoEncontrada  = errors.New("condición no encontrada")
 	ErrBeneficioNoDisponible  = errors.New("el beneficio no está disponible para el cliente")
+	ErrBeneficioConCanjes     = errors.New("no se puede eliminar un beneficio que tiene canjes registrados")
 	ErrUmbralNoAlcanzado      = errors.New("el cliente no alcanzó el umbral de la condición")
 	ErrCompraSinItems         = errors.New("la compra no tiene items")
+	ErrCompraNoEncontrada     = errors.New("compra no encontrada")
 )

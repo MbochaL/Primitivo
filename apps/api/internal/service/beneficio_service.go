@@ -39,6 +39,10 @@ func (s *BeneficioService) DesactivarBeneficio(ctx context.Context, id uuid.UUID
 	return s.repo.DesactivarBeneficio(ctx, id)
 }
 
+func (s *BeneficioService) EliminarBeneficio(ctx context.Context, id uuid.UUID) error {
+	return s.repo.EliminarBeneficio(ctx, id)
+}
+
 func (s *BeneficioService) CrearCondicion(ctx context.Context, n domain.NuevaCondicion) (domain.Condicion, error) {
 	return s.repo.CrearCondicion(ctx, n)
 }

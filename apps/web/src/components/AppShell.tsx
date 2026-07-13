@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/clientes', label: 'Clientes', icon: 'group' },
   { href: '/', label: 'Reportes', icon: 'analytics', adminOnly: true },
   { href: '/menu', label: 'Menú', icon: 'restaurant-menu', adminOnly: true },
+  { href: '/historial', label: 'Historial', icon: 'receipt-long', adminOnly: true },
   { href: '/beneficios', label: 'Beneficios', icon: 'loyalty', adminOnly: true },
   { href: '/instituciones', label: 'Instituciones', icon: 'domain', adminOnly: true },
   { href: '/usuarios', label: 'Usuarios', icon: 'manage-accounts', adminOnly: true },
@@ -151,8 +152,8 @@ function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) 
 const styles = StyleSheet.create({
   desktopRoot: { flex: 1, flexDirection: 'row', backgroundColor: theme.colors.surface },
   mobileRoot: { flex: 1, backgroundColor: theme.colors.surface },
-  content: { flex: 1, minWidth: 0 },
-  mobileContent: { flex: 1, minWidth: 0, paddingBottom: 12 },
+  content: { flex: 1, minWidth: 0, overflow: 'hidden' },
+  mobileContent: { flex: 1, minWidth: 0, overflow: 'hidden' },
 
   // Sidebar (desktop)
   sidebar: {

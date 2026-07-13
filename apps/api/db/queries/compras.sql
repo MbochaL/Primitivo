@@ -31,6 +31,9 @@ WHERE co.cliente_id = $1
   AND p.categoria_id = $2
   AND ($3::timestamptz IS NULL OR co.fecha > $3);
 
+-- name: DeleteCompra :exec
+DELETE FROM compras WHERE id = $1;
+
 -- name: ContarItemsPorClienteYProducto :one
 SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
 FROM detalle_compra dc

@@ -82,10 +82,14 @@ func mapDomainError(err error) (int, string) {
 		return http.StatusConflict, "dni_ya_registrado"
 	case errors.Is(err, domain.ErrBeneficioNoDisponible):
 		return http.StatusConflict, "beneficio_no_disponible"
+	case errors.Is(err, domain.ErrBeneficioConCanjes):
+		return http.StatusConflict, "beneficio_con_canjes"
 	case errors.Is(err, domain.ErrUmbralNoAlcanzado):
 		return http.StatusConflict, "umbral_no_alcanzado"
 	case errors.Is(err, domain.ErrRolInvalido):
 		return http.StatusBadRequest, "rol_invalido"
+	case errors.Is(err, domain.ErrCompraNoEncontrada):
+		return http.StatusNotFound, "compra_no_encontrada"
 	case errors.Is(err, domain.ErrCompraSinItems):
 		return http.StatusBadRequest, "compra_sin_items"
 	default:

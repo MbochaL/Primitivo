@@ -179,6 +179,15 @@ func (q *Queries) ContarItemsPorClienteYCategoria(ctx context.Context, arg Conta
 	return total, err
 }
 
+const deleteCompra = `-- name: DeleteCompra :exec
+DELETE FROM compras WHERE id = $1
+`
+
+func (q *Queries) DeleteCompra(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCompra, id)
+	return err
+}
+
 const contarItemsPorClienteYProducto = `-- name: ContarItemsPorClienteYProducto :one
 SELECT COALESCE(SUM(dc.cantidad), 0)::INTEGER AS total
 FROM detalle_compra dc

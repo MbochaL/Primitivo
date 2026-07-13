@@ -23,3 +23,9 @@ RETURNING *;
 
 -- name: ToggleBeneficioActivo :one
 UPDATE beneficios SET activo = $2 WHERE id = $1 RETURNING *;
+
+-- name: CountCanjesPorBeneficio :one
+SELECT COUNT(*) FROM canjes WHERE beneficio_id = $1;
+
+-- name: DeleteBeneficio :exec
+DELETE FROM beneficios WHERE id = $1;
