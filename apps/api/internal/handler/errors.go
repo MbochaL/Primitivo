@@ -66,6 +66,8 @@ func mapDomainError(err error) (int, string) {
 		return http.StatusNotFound, "usuario_no_encontrado"
 	case errors.Is(err, domain.ErrInstitucionNoEncontrada):
 		return http.StatusNotFound, "institucion_no_encontrada"
+	case errors.Is(err, domain.ErrInstitucionConDependencias):
+		return http.StatusConflict, "institucion_con_dependencias"
 	case errors.Is(err, domain.ErrClienteNoEncontrado):
 		return http.StatusNotFound, "cliente_no_encontrado"
 	case errors.Is(err, domain.ErrProductoNoEncontrado):

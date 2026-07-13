@@ -12,10 +12,11 @@ import (
 )
 
 type Querier interface {
+	BuscarClientes(ctx context.Context, buscar string) ([]ListClientesRow, error)
 	ContarItemsPorClienteYCategoria(ctx context.Context, arg ContarItemsPorClienteYCategoriaParams) (int32, error)
 	ContarItemsPorClienteYProducto(ctx context.Context, arg ContarItemsPorClienteYProductoParams) (int32, error)
 	CountCanjesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) (int64, error)
-	CreateBeneficio(ctx context.Context, arg CreateBeneficioParams) (Beneficio, error)
+	CreateBeneficio(ctx context.Context, nombre string) (Beneficio, error)
 	CreateCanje(ctx context.Context, arg CreateCanjeParams) (Canje, error)
 	CreateCategoria(ctx context.Context, arg CreateCategoriaParams) (Categoria, error)
 	CreateCliente(ctx context.Context, arg CreateClienteParams) (Cliente, error)
@@ -24,34 +25,37 @@ type Querier interface {
 	CreateDetalleCompra(ctx context.Context, arg CreateDetalleCompraParams) error
 	CreateInstitucion(ctx context.Context, nombre string) (Institucione, error)
 	DeleteBeneficio(ctx context.Context, id uuid.UUID) error
+	DeleteBeneficioInstituciones(ctx context.Context, beneficioID uuid.UUID) error
+	DeleteCliente(ctx context.Context, id uuid.UUID) error
 	DeleteCompra(ctx context.Context, id uuid.UUID) error
 	DeleteCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) error
 	DeleteInstitucion(ctx context.Context, id uuid.UUID) error
 	CreateProducto(ctx context.Context, arg CreateProductoParams) (Producto, error)
 	CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (UsuariosSistema, error)
-	GetBeneficioPorID(ctx context.Context, id uuid.UUID) (GetBeneficioPorIDRow, error)
+	GetBeneficioPorID(ctx context.Context, id uuid.UUID) (Beneficio, error)
 	GetCategoriaPorID(ctx context.Context, id uuid.UUID) (Categoria, error)
 	GetClientePorDNI(ctx context.Context, dni string) (GetClientePorDNIRow, error)
 	GetClientePorID(ctx context.Context, id uuid.UUID) (GetClientePorIDRow, error)
-	GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error)
+	GetCondicionParaCanje(ctx context.Context, arg GetCondicionParaCanjeParams) (GetCondicionParaCanjeRow, error)
 	GetFechaUltimoCanjeCondicion(ctx context.Context, arg GetFechaUltimoCanjeCondicionParams) (pgtype.Timestamptz, error)
 	GetInstitucionByID(ctx context.Context, id uuid.UUID) (Institucione, error)
 	GetProductoPorID(ctx context.Context, id uuid.UUID) (Producto, error)
 	GetUsuarioByEmail(ctx context.Context, email string) (UsuariosSistema, error)
 	GetUsuarioByID(ctx context.Context, id uuid.UUID) (UsuariosSistema, error)
 	IncrementarContadorInfusiones(ctx context.Context, arg IncrementarContadorInfusionesParams) error
+	InsertBeneficioInstitucion(ctx context.Context, arg InsertBeneficioInstitucionParams) error
 	ListAllProductos(ctx context.Context) ([]Producto, error)
-	ListBeneficios(ctx context.Context) ([]ListBeneficiosRow, error)
-	NullifyBeneficiosInstitucion(ctx context.Context, id uuid.UUID) error
-	NullifyClientesInstitucion(ctx context.Context, id uuid.UUID) error
+	ListBeneficios(ctx context.Context) ([]Beneficio, error)
 	ListCategorias(ctx context.Context) ([]Categoria, error)
 	ListClientes(ctx context.Context) ([]ListClientesRow, error)
 	ListComprasPorCliente(ctx context.Context, clienteID uuid.UUID) ([]Compra, error)
 	ListCondicionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) ([]Condicione, error)
 	ListCondicionesPorInstitucion(ctx context.Context, institucionID pgtype.UUID) ([]ListCondicionesPorInstitucionRow, error)
 	ListInstituciones(ctx context.Context) ([]Institucione, error)
+	ListInstitucionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) ([]BeneficioInstitucionRow, error)
 	ListProductosActivos(ctx context.Context) ([]Producto, error)
 	ListTodasCondiciones(ctx context.Context) ([]Condicione, error)
+	ListTodasInstitucionesBeneficios(ctx context.Context) ([]BeneficioInstitucionRow, error)
 	ListUsuarios(ctx context.Context) ([]UsuariosSistema, error)
 	ReiniciarContadorInfusiones(ctx context.Context, id uuid.UUID) error
 	ToggleBeneficioActivo(ctx context.Context, arg ToggleBeneficioActivoParams) (Beneficio, error)

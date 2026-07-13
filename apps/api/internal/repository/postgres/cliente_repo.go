@@ -53,6 +53,21 @@ func (r *ClienteRepo) GetByID(ctx context.Context, id uuid.UUID) (domain.Cliente
 	), nil
 }
 
+func (r *ClienteRepo) Buscar(ctx context.Context, q string) ([]domain.ClienteConInstitucion, error) {
+	rows, err := r.q.BuscarClientes(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	clientes := make([]domain.ClienteConInstitucion, 0, len(rows))
+	for _, row := range rows {
+		clientes = append(clientes, clienteConInstitucion(
+			row.ID, row.Dni, row.Nombre, row.Email, row.InstitucionID,
+			row.ContadorInfusiones, row.CreatedAt, row.InstitucionNombre,
+		))
+	}
+	return clientes, nil
+}
+
 func (r *ClienteRepo) GetByDNI(ctx context.Context, dni string) (domain.ClienteConInstitucion, error) {
 	row, err := r.q.GetClientePorDNI(ctx, dni)
 	if err != nil {
@@ -96,6 +111,16 @@ func (r *ClienteRepo) Actualizar(ctx context.Context, c domain.Cliente) (domain.
 		return domain.Cliente{}, err
 	}
 	return aClienteDominio(row), nil
+}
+
+func (r *ClienteRepo) Eliminar(ctx context.Context, id uuid.UUID) error {
+	if _, err := r.q.GetClientePorID(ctx, id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrClienteNoEncontrado
+		}
+		return err
+	}
+	return r.q.DeleteCliente(ctx, id)
 }
 
 func (r *ClienteRepo) Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error) {

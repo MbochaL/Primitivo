@@ -102,24 +102,6 @@ func (q *Queries) UpdateInstitucion(ctx context.Context, arg UpdateInstitucionPa
 	return i, err
 }
 
-const nullifyClientesInstitucion = `-- name: NullifyClientesInstitucion :exec
-UPDATE clientes SET institucion_id = NULL WHERE institucion_id = $1
-`
-
-func (q *Queries) NullifyClientesInstitucion(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, nullifyClientesInstitucion, id)
-	return err
-}
-
-const nullifyBeneficiosInstitucion = `-- name: NullifyBeneficiosInstitucion :exec
-UPDATE beneficios SET institucion_id = NULL WHERE institucion_id = $1
-`
-
-func (q *Queries) NullifyBeneficiosInstitucion(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, nullifyBeneficiosInstitucion, id)
-	return err
-}
-
 const deleteInstitucion = `-- name: DeleteInstitucion :exec
 DELETE FROM instituciones WHERE id = $1
 `

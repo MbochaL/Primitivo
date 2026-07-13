@@ -80,7 +80,10 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 	descuento := 0
 	var canje *sqlc.GetCondicionParaCanjeRow
 	if n.CondicionID != nil {
-		cond, err := q.GetCondicionParaCanje(ctx, *n.CondicionID)
+		cond, err := q.GetCondicionParaCanje(ctx, sqlc.GetCondicionParaCanjeParams{
+			ID:            *n.CondicionID,
+			InstitucionID: cliente.InstitucionID.UUID,
+		})
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return domain.Compra{}, domain.ErrBeneficioNoDisponible
@@ -90,12 +93,8 @@ func (r *CompraRepo) RegistrarCompra(ctx context.Context, n domain.NuevaCompra) 
 		if !cond.Vigente || !cond.BeneficioActivo {
 			return domain.Compra{}, domain.ErrBeneficioNoDisponible
 		}
-		// Beneficio global (institucion_id IS NULL) → aplica a cualquier cliente.
-		// Beneficio de institución → debe coincidir con la institución del cliente.
-		if cond.InstitucionID.Valid {
-			if !cliente.InstitucionID.Valid || cliente.InstitucionID.UUID != cond.InstitucionID.Bytes {
-				return domain.Compra{}, domain.ErrBeneficioNoDisponible
-			}
+		if !cond.InstitucionMatch {
+			return domain.Compra{}, domain.ErrBeneficioNoDisponible
 		}
 
 		// Validar trigger.

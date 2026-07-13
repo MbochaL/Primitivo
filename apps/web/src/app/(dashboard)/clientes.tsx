@@ -28,10 +28,11 @@ import {
   useToast,
 } from '@primitivo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -66,41 +67,41 @@ const finMesAnterior = () => {
 
 type Rango = 'todo' | 'mes' | 'mes_ant' | 'custom';
 const RANGOS: { key: Rango; label: string }[] = [
-  { key: 'todo',    label: 'Todos' },
-  { key: 'mes',     label: 'Este mes' },
+  { key: 'todo', label: 'Todos' },
+  { key: 'mes', label: 'Este mes' },
   { key: 'mes_ant', label: 'Mes anterior' },
-  { key: 'custom',  label: 'Personalizado' },
+  { key: 'custom', label: 'Personalizado' },
 ];
 
 function rangoFechas(rango: Rango, desde: string, hasta: string): [string, string] | null {
   switch (rango) {
-    case 'todo':    return null;
-    case 'mes':     return [inicioMes(), hoy()];
+    case 'todo': return null;
+    case 'mes': return [inicioMes(), hoy()];
     case 'mes_ant': return [inicioMesAnterior(), finMesAnterior()];
-    case 'custom':  return [desde || hoy(), hasta || hoy()];
+    case 'custom': return [desde || hoy(), hasta || hoy()];
   }
 }
 
 // ── Form schema ───────────────────────────────────────────────────────────────
 
 const clienteSchema = z.object({
-  dni:    z.string().min(1, 'DNI requerido'),
+  dni: z.string().min(1, 'DNI requerido'),
   nombre: z.string().min(1, 'Nombre requerido'),
-  email:  z.string().email('Email inválido').optional().or(z.literal('')),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
 });
 type ClienteForm = z.infer<typeof clienteSchema>;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ClientesScreen() {
-  const qc       = useQueryClient();
-  const toast    = useToast();
+  const qc = useQueryClient();
+  const toast = useToast();
   const { isMobile, isDesktop } = useBreakpoint();
   const { esAdmin } = useAuth();
 
-  const [query,       setQuery]       = useState('');
-  const [selectedId,  setSelectedId]  = useState<string | null>(null);
-  const [rango,       setRango]       = useState<Rango>('todo');
+  const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [rango, setRango] = useState<Rango>('todo');
   const [customDesde, setCustomDesde] = useState(hoy());
   const [customHasta, setCustomHasta] = useState(hoy());
   const [modal, setModal] = useState<
@@ -146,11 +147,11 @@ export default function ClientesScreen() {
   const suggestions = useMemo<SearchSuggestion[]>(
     () =>
       filtrados.slice(0, 8).map((c) => ({
-        id:       c.id ?? '',
-        label:    c.nombre ?? '',
+        id: c.id ?? '',
+        label: c.nombre ?? '',
         sublabel: `DNI ${c.dni}${c.institucion_nombre ? ` · ${c.institucion_nombre}` : ''}`,
-        meta:     `${c.contador_infusiones ?? 0} inf.`,
-        icon:     'person' as const,
+        meta: `${c.contador_infusiones ?? 0} inf.`,
+        icon: 'person' as const,
       })),
     [filtrados],
   );
@@ -167,6 +168,36 @@ export default function ClientesScreen() {
     toast.success(modal?.mode === 'crear' ? 'Cliente registrado' : 'Cliente actualizado');
     if (modal?.mode === 'crear' && c.id) setSelectedId(c.id);
     setModal(null);
+  };
+
+  const eliminarMutation = useMutation({
+    mutationFn: (id: string) => ClientesService.deleteClientes(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clientes'] });
+      setSelectedId(null);
+      toast.success('Cliente eliminado');
+    },
+    onError: (err) => toast.error(mensajeDeError(err)),
+  });
+
+  const handleEliminar = (cliente: dto_ClienteResponse) => {
+    if (!cliente.id) return;
+    const id = cliente.id;
+    const nombre = cliente.nombre ?? 'este cliente';
+    if (Platform.OS === 'web') {
+      if (window.confirm(`¿Eliminar a ${nombre}? Se borrarán también sus compras y canjes. Esta acción no se puede deshacer.`)) {
+        eliminarMutation.mutate(id);
+      }
+    } else {
+      Alert.alert(
+        'Eliminar cliente',
+        `¿Eliminar a ${nombre}? Se borrarán también sus compras y canjes. Esta acción no se puede deshacer.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Eliminar', style: 'destructive', onPress: () => eliminarMutation.mutate(id) },
+        ],
+      );
+    }
   };
 
   // ── Columnas ──────────────────────────────────────────────────────────────
@@ -293,6 +324,8 @@ export default function ClientesScreen() {
             cliente={selectedCliente}
             isDesktop={false}
             onEditar={() => setModal({ mode: 'editar', cliente: selectedCliente })}
+            onEliminar={esAdmin ? () => handleEliminar(selectedCliente) : undefined}
+            eliminando={eliminarMutation.isPending}
           />
         </View>
       )}
@@ -363,6 +396,8 @@ export default function ClientesScreen() {
                       onEditar={() =>
                         setModal({ mode: 'editar', cliente: selectedCliente })
                       }
+                      onEliminar={esAdmin ? () => handleEliminar(selectedCliente) : undefined}
+                      eliminando={eliminarMutation.isPending}
                     />
                   </ScrollView>
                 </>
@@ -416,41 +451,56 @@ function ClienteDetalle({
   cliente,
   isDesktop,
   onEditar,
+  onEliminar,
+  eliminando,
 }: {
   cliente: dto_ClienteResponse;
   isDesktop: boolean;
   onEditar: () => void;
+  onEliminar?: () => void;
+  eliminando?: boolean;
 }) {
-  const id       = cliente.id ?? '';
+  const id = cliente.id ?? '';
   const contador = cliente.contador_infusiones ?? 0;
 
   const beneficios = useQuery({
     queryKey: ['cliente', id, 'beneficios'],
-    queryFn:  () => ClientesService.getClientesBeneficios(id),
-    enabled:  !!id,
+    queryFn: () => ClientesService.getClientesBeneficios(id),
+    enabled: !!id,
   });
   const historial = useQuery({
     queryKey: ['cliente', id, 'historial'],
-    queryFn:  () => ClientesService.getClientesHistorial(id),
-    enabled:  !!id,
+    queryFn: () => ClientesService.getClientesHistorial(id),
+    enabled: !!id,
   });
 
   const proximo = (beneficios.data ?? []).find((b) => !b.alcanzado);
-  const meta    = proximo?.umbral_infusiones ?? contador;
+  const meta = proximo?.umbral_infusiones ?? contador;
 
   return (
     <View style={styles.detalle}>
       {/* Perfil */}
       <Card>
         <View style={styles.profileHead}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 3 }}>
             <Title>{cliente.nombre}</Title>
             <Label style={{ marginTop: 4 }}>
               DNI {cliente.dni}
               {cliente.institucion_nombre ? ` · ${cliente.institucion_nombre}` : ' · Sin convenio'}
             </Label>
           </View>
-          <Button title="Editar" icon="edit" variant="secondary" onPress={onEditar} />
+          <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+            <Button title="Editar" icon="edit" variant="secondary" onPress={onEditar} />
+            {onEliminar && (
+              <Button
+                title="Eliminar"
+                icon="delete"
+                variant="danger"
+                loading={eliminando}
+                onPress={onEliminar}
+              />
+            )}
+          </View>
         </View>
       </Card>
 
@@ -557,21 +607,27 @@ function ClienteFormModal({
   onSaved: (c: dto_ClienteResponse) => void;
 }) {
   const toast = useToast();
-  const [institucionId, setInstitucionId] = useState<string | undefined>(
-    cliente?.institucion_id ?? undefined,
+  const [institucionId, setInstitucionId] = useState<string>(
+    cliente?.institucion_id ?? '',
   );
 
   const instituciones = useQuery({
     queryKey: ['instituciones'],
-    queryFn:  () => InstitucionesService.getInstituciones(),
+    queryFn: () => InstitucionesService.getInstituciones(),
   });
 
+  useEffect(() => {
+    if (!institucionId && instituciones.data?.[0]?.id) {
+      setInstitucionId(instituciones.data[0].id);
+    }
+  }, [instituciones.data, institucionId]);
+
   const { control, handleSubmit, formState: { errors } } = useForm<ClienteForm>({
-    resolver:      zodResolver(clienteSchema),
+    resolver: zodResolver(clienteSchema),
     defaultValues: {
-      dni:    cliente?.dni    ?? '',
+      dni: cliente?.dni ?? '',
       nombre: cliente?.nombre ?? '',
-      email:  cliente?.email  ?? '',
+      email: cliente?.email ?? '',
     },
   });
 
@@ -584,7 +640,7 @@ function ClienteFormModal({
       return ClientesService.postClientes({ dni: data.dni, nombre: data.nombre, email, institucion_id: institucionId });
     },
     onSuccess: (c) => onSaved(c),
-    onError:   (err) => toast.error(mensajeDeError(err)),
+    onError: (err) => toast.error(mensajeDeError(err)),
   });
 
   return (
@@ -636,19 +692,13 @@ function ClienteFormModal({
         )}
       />
       <View>
-        <Label>Institución (opcional)</Label>
+        <Label>Institución</Label>
         <View style={styles.chips}>
-          <Pressable
-            style={[styles.chip, !institucionId && styles.chipActive]}
-            onPress={() => setInstitucionId(undefined)}
-          >
-            <Label style={!institucionId ? styles.chipActiveText : undefined}>Ninguna</Label>
-          </Pressable>
           {(instituciones.data ?? []).map((i) => (
             <Pressable
               key={i.id}
               style={[styles.chip, institucionId === i.id && styles.chipActive]}
-              onPress={() => setInstitucionId(i.id)}
+              onPress={() => setInstitucionId(i.id ?? '')}
             >
               <Label style={institucionId === i.id ? styles.chipActiveText : undefined}>
                 {i.nombre}
@@ -663,7 +713,7 @@ function ClienteFormModal({
 
 // ── ImportarClientesModal ─────────────────────────────────────────────────────
 
-type FilaParseada = { dni: string; nombre: string; email?: string };
+type FilaParseada = { dni: string; nombre: string; email?: string; institucion?: string };
 
 async function parsearArchivo(file: File): Promise<FilaParseada[]> {
   let workbook: XLSX.WorkBook;
@@ -697,6 +747,9 @@ async function parsearArchivo(file: File): Promise<FilaParseada[]> {
     ),
     cuil: encabezados.findIndex((h) => h === 'cuil'),
     email: encabezados.findIndex((h) => h.includes('email') || h.includes('correo')),
+    institucion: encabezados.findIndex(
+      (h) => h === 'institución' || h === 'institucion' || h === 'institution' || h === 'convenio',
+    ),
   };
 
   if (idx.nombre === -1 || (idx.dni === -1 && idx.cuil === -1)) return [];
@@ -725,7 +778,12 @@ async function parsearArchivo(file: File): Promise<FilaParseada[]> {
         ? String(fila[idx.email]).trim() || undefined
         : undefined;
 
-    resultado.push({ nombre, dni, email: emailVal });
+    const institucionVal =
+      idx.institucion >= 0 && fila[idx.institucion]
+        ? String(fila[idx.institucion]).trim() || undefined
+        : undefined;
+
+    resultado.push({ nombre, dni, email: emailVal, institucion: institucionVal });
   }
 
   return resultado;
@@ -742,6 +800,18 @@ function ImportarClientesModal({
   const [archivo, setArchivo] = useState<{ nombre: string; filas: FilaParseada[] } | null>(null);
   const [resultado, setResultado] = useState<dto_ImportarClientesResponse | null>(null);
   const [importando, setImportando] = useState(false);
+  const [institucionId, setInstitucionId] = useState<string>('');
+
+  const instituciones = useQuery({
+    queryKey: ['instituciones'],
+    queryFn: () => InstitucionesService.getInstituciones(),
+  });
+
+  useEffect(() => {
+    if (!institucionId && instituciones.data?.[0]?.id) {
+      setInstitucionId(instituciones.data[0].id);
+    }
+  }, [instituciones.data, institucionId]);
 
   const seleccionarArchivo = () => {
     const input = document.createElement('input');
@@ -768,10 +838,21 @@ function ImportarClientesModal({
   };
 
   const importar = async () => {
-    if (!archivo) return;
+    if (!archivo || !institucionId) return;
     setImportando(true);
     try {
-      const res = await ClientesService.postClientesImportar({ clientes: archivo.filas });
+      const instList = instituciones.data ?? [];
+      const res = await ClientesService.postClientesImportar({
+        clientes: archivo.filas.map((f) => {
+          const matchId = f.institucion
+            ? (instList.find(
+              (i) => i.nombre?.toLowerCase() === f.institucion!.toLowerCase(),
+            )?.id ?? institucionId)
+            : institucionId;
+          const { institucion: _inst, ...rest } = f;
+          return { ...rest, institucion_id: matchId };
+        }),
+      });
       setResultado(res);
       onImportado();
     } catch (err) {
@@ -797,12 +878,36 @@ function ImportarClientesModal({
                 : 'Seleccionar archivo'
             }
             loading={importando}
+            disabled={!!archivo && !institucionId}
             onPress={archivo ? importar : seleccionarArchivo}
             fullWidth
           />
         )
       }
     >
+      {/* Institución por defecto */}
+      {!resultado && (
+        <View>
+          <Label>Institución por defecto</Label>
+          <Caption style={{ color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs }}>
+            Se usa para las filas que no tengan columna "Institución" en el archivo.
+          </Caption>
+          <View style={styles.chips}>
+            {(instituciones.data ?? []).map((i) => (
+              <Pressable
+                key={i.id}
+                style={[styles.chip, institucionId === i.id && styles.chipActive]}
+                onPress={() => setInstitucionId(i.id ?? '')}
+              >
+                <Label style={institucionId === i.id ? styles.chipActiveText : undefined}>
+                  {i.nombre}
+                </Label>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* Zona de carga de archivo */}
       {!resultado && (
         <Pressable style={styles.dropzone} onPress={seleccionarArchivo}>
@@ -823,6 +928,12 @@ function ImportarClientesModal({
             <View style={styles.importStat}>
               <Text style={styles.importStatNum}>{archivo.filas.length}</Text>
               <Caption>filas detectadas</Caption>
+            </View>
+            <View style={styles.importStat}>
+              <Text style={styles.importStatNum}>
+                {archivo.filas.filter((f) => !!f.institucion).length}
+              </Text>
+              <Caption>con institución</Caption>
             </View>
           </View>
         </Card>
@@ -875,7 +986,7 @@ function ImportarClientesModal({
       {!archivo && (
         <Card>
           <Caption style={{ color: theme.colors.onSurfaceVariant }}>
-            El archivo necesita columnas con encabezados:{'\n'}
+            Columnas requeridas:{'\n'}
             {'• '}
             <Caption style={{ fontWeight: '700' }}>Nombre</Caption>
             {' o '}
@@ -885,7 +996,9 @@ function ImportarClientesModal({
             <Caption style={{ fontWeight: '700' }}>DNI</Caption>
             {' o '}
             <Caption style={{ fontWeight: '700' }}>CUIL</Caption>
-            {' (el DNI se extrae del CUIL automáticamente)'}
+            {' (el DNI se extrae del CUIL automáticamente)\n\nColumna opcional:\n• '}
+            <Caption style={{ fontWeight: '700' }}>Institución</Caption>
+            {' — sobreescribe la institución por defecto para esa fila'}
           </Caption>
         </Card>
       )}
@@ -897,9 +1010,9 @@ function ImportarClientesModal({
 
 const styles = StyleSheet.create({
   // layout
-  layout:        { gap: theme.spacing.xl },
+  layout: { gap: theme.spacing.xl },
   layoutDesktop: { flex: 1, flexDirection: 'row', gap: theme.spacing.xl },
-  colLeft:       { flex: 1 },
+  colLeft: { flex: 1 },
   leftColContent: { gap: theme.spacing.md },
 
   // right panel
@@ -933,9 +1046,12 @@ const styles = StyleSheet.create({
   // mobile detail
   mobileDetail: {
     gap: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colors.black,
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: theme.colors.black,
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    ...theme.shadows.ink,
   },
   mobileDetailClose: {
     flexDirection: 'row',
@@ -982,15 +1098,15 @@ const styles = StyleSheet.create({
 
   // rango chips
   rangoScroll: { flexGrow: 0 },
-  rangoRow:    { flexDirection: 'row', gap: theme.spacing.sm },
+  rangoRow: { flexDirection: 'row', gap: theme.spacing.sm },
   rangoChip: {
     paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.black,
   },
-  rangoChipActive:     { backgroundColor: theme.colors.black },
-  rangoChipText:       { color: theme.colors.black },
+  rangoChipActive: { backgroundColor: theme.colors.black },
+  rangoChipText: { color: theme.colors.black },
   rangoChipActiveText: { color: theme.colors.surfaceContainerLowest },
 
   // date inputs
@@ -1000,7 +1116,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   dateField: { flex: 1, gap: 4 },
-  dateSep:   { paddingTop: theme.spacing.lg },
+  dateSep: { paddingTop: theme.spacing.lg },
   dateLabel: { color: theme.colors.onSurfaceVariant },
   dateInput: {
     height: 44,
@@ -1017,8 +1133,8 @@ const styles = StyleSheet.create({
   infBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 
   // detalle del cliente
-  detalle:    { gap: theme.spacing.md },
-  profileHead:{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.md },
+  detalle: { gap: theme.spacing.md },
+  profileHead: { flexDirection: 'column', alignItems: 'flex-start', gap: theme.spacing.md },
   counterRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1027,20 +1143,20 @@ const styles = StyleSheet.create({
   },
   counterNum: {
     fontFamily: theme.typography.fontFamily.display,
-    fontSize:   theme.typography.fontSize.displayXl,
-    color:      theme.colors.white,
+    fontSize: theme.typography.fontSize.displayXl,
+    color: theme.colors.white,
   },
   counterMeta: {
     fontFamily: theme.typography.fontFamily.headingMedium,
-    fontSize:   theme.typography.fontSize.headlineMd,
-    color:      theme.colors.onPrimaryMuted,
+    fontSize: theme.typography.fontSize.headlineMd,
+    color: theme.colors.onPrimaryMuted,
     marginBottom: 8,
   },
   proximoText: { color: theme.colors.onPrimaryMuted, marginTop: theme.spacing.sm },
-  twoCol:      { gap: theme.spacing.md },
-  twoColRow:   { flexDirection: 'row' },
-  col:         { flex: 1, gap: theme.spacing.sm },
-  sectionTitle:{ fontSize: theme.typography.fontSize.headlineMd, color: theme.colors.black },
+  twoCol: { gap: theme.spacing.md },
+  twoColRow: { flexDirection: 'row' },
+  col: { flex: 1, gap: theme.spacing.sm },
+  sectionTitle: { fontSize: theme.typography.fontSize.headlineMd, color: theme.colors.black },
   benefRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1051,8 +1167,8 @@ const styles = StyleSheet.create({
   },
   benefName: {
     fontFamily: theme.typography.fontFamily.bodyBold,
-    fontSize:   theme.typography.fontSize.bodyMd,
-    color:      theme.colors.onSurface,
+    fontSize: theme.typography.fontSize.bodyMd,
+    color: theme.colors.onSurface,
   },
   compraRow: {
     flexDirection: 'row',
@@ -1076,6 +1192,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
   },
-  chipActive:     { backgroundColor: theme.colors.black },
+  chipActive: { backgroundColor: theme.colors.black },
   chipActiveText: { color: theme.colors.white },
 });

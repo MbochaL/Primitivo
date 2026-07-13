@@ -384,15 +384,19 @@ type CondicionResponse struct {
 	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id"`
 }
 
-// BeneficioAdminResponse expone el beneficio con su institución y condiciones (admin).
-// InstitucionID e InstitucionNombre son nil para beneficios globales.
+// BeneficioInstitucionResponse es la institución embebida en la respuesta de un beneficio.
+type BeneficioInstitucionResponse struct {
+	ID     string `json:"id"`
+	Nombre string `json:"nombre"`
+}
+
+// BeneficioAdminResponse expone el beneficio con sus instituciones y condiciones (admin).
 type BeneficioAdminResponse struct {
-	ID                string              `json:"id"`
-	InstitucionID     *string             `json:"institucion_id"`
-	InstitucionNombre *string             `json:"institucion_nombre"`
-	Nombre            string              `json:"nombre"`
-	Activo            bool                `json:"activo"`
-	Condiciones       []CondicionResponse `json:"condiciones"`
+	ID            string                         `json:"id"`
+	Instituciones []BeneficioInstitucionResponse `json:"instituciones"`
+	Nombre        string                         `json:"nombre"`
+	Activo        bool                           `json:"activo"`
+	Condiciones   []CondicionResponse            `json:"condiciones"`
 }
 
 // ToBeneficioAdminResponse mapea un BeneficioConDetalle a su DTO.
@@ -401,13 +405,19 @@ func ToBeneficioAdminResponse(b domain.BeneficioConDetalle) BeneficioAdminRespon
 	for _, c := range b.Condiciones {
 		conds = append(conds, ToCondicionResponse(c))
 	}
+	insts := make([]BeneficioInstitucionResponse, 0, len(b.Instituciones))
+	for _, i := range b.Instituciones {
+		insts = append(insts, BeneficioInstitucionResponse{
+			ID:     i.ID.String(),
+			Nombre: i.Nombre,
+		})
+	}
 	return BeneficioAdminResponse{
-		ID:                b.ID.String(),
-		InstitucionID:     uuidPtrToString(b.InstitucionID),
-		InstitucionNombre: b.InstitucionNombre,
-		Nombre:            b.Nombre,
-		Activo:            b.Activo,
-		Condiciones:       conds,
+		ID:            b.ID.String(),
+		Instituciones: insts,
+		Nombre:        b.Nombre,
+		Activo:        b.Activo,
+		Condiciones:   conds,
 	}
 }
 

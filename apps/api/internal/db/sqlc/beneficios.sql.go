@@ -9,26 +9,19 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBeneficio = `-- name: CreateBeneficio :one
-INSERT INTO beneficios (institucion_id, nombre)
-VALUES ($1, $2)
-RETURNING id, institucion_id, nombre, activo
+INSERT INTO beneficios (nombre)
+VALUES ($1)
+RETURNING id, nombre, activo
 `
 
-type CreateBeneficioParams struct {
-	InstitucionID pgtype.UUID `json:"institucion_id"`
-	Nombre        string      `json:"nombre"`
-}
-
-func (q *Queries) CreateBeneficio(ctx context.Context, arg CreateBeneficioParams) (Beneficio, error) {
-	row := q.db.QueryRow(ctx, createBeneficio, arg.InstitucionID, arg.Nombre)
+func (q *Queries) CreateBeneficio(ctx context.Context, nombre string) (Beneficio, error) {
+	row := q.db.QueryRow(ctx, createBeneficio, nombre)
 	var i Beneficio
 	err := row.Scan(
 		&i.ID,
-		&i.InstitucionID,
 		&i.Nombre,
 		&i.Activo,
 	)
@@ -36,62 +29,67 @@ func (q *Queries) CreateBeneficio(ctx context.Context, arg CreateBeneficioParams
 }
 
 const getBeneficioPorID = `-- name: GetBeneficioPorID :one
-SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
-FROM beneficios b
-LEFT JOIN instituciones i ON i.id = b.institucion_id
-WHERE b.id = $1
+SELECT id, nombre, activo FROM beneficios WHERE id = $1
 `
 
-type GetBeneficioPorIDRow struct {
-	ID                uuid.UUID   `json:"id"`
-	InstitucionID     pgtype.UUID `json:"institucion_id"`
-	Nombre            string      `json:"nombre"`
-	Activo            bool        `json:"activo"`
-	InstitucionNombre pgtype.Text `json:"institucion_nombre"`
-}
-
-func (q *Queries) GetBeneficioPorID(ctx context.Context, id uuid.UUID) (GetBeneficioPorIDRow, error) {
+func (q *Queries) GetBeneficioPorID(ctx context.Context, id uuid.UUID) (Beneficio, error) {
 	row := q.db.QueryRow(ctx, getBeneficioPorID, id)
-	var i GetBeneficioPorIDRow
+	var i Beneficio
 	err := row.Scan(
 		&i.ID,
-		&i.InstitucionID,
 		&i.Nombre,
 		&i.Activo,
-		&i.InstitucionNombre,
 	)
 	return i, err
 }
 
 const listBeneficios = `-- name: ListBeneficios :many
-SELECT b.id, b.institucion_id, b.nombre, b.activo, i.nombre AS institucion_nombre
-FROM beneficios b
-LEFT JOIN instituciones i ON i.id = b.institucion_id
-ORDER BY i.nombre ASC NULLS LAST, b.nombre ASC
+SELECT id, nombre, activo FROM beneficios ORDER BY nombre ASC
 `
 
-type ListBeneficiosRow struct {
-	ID                uuid.UUID   `json:"id"`
-	InstitucionID     pgtype.UUID `json:"institucion_id"`
-	Nombre            string      `json:"nombre"`
-	Activo            bool        `json:"activo"`
-	InstitucionNombre pgtype.Text `json:"institucion_nombre"`
-}
-
-func (q *Queries) ListBeneficios(ctx context.Context) ([]ListBeneficiosRow, error) {
+func (q *Queries) ListBeneficios(ctx context.Context) ([]Beneficio, error) {
 	rows, err := q.db.Query(ctx, listBeneficios)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListBeneficiosRow{}
+	items := []Beneficio{}
 	for rows.Next() {
-		var i ListBeneficiosRow
+		var i Beneficio
 		if err := rows.Scan(
 			&i.ID,
-			&i.InstitucionID,
 			&i.Nombre,
 			&i.Activo,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTodasInstitucionesBeneficios = `-- name: ListTodasInstitucionesBeneficios :many
+SELECT bi.beneficio_id, bi.institucion_id, i.nombre AS institucion_nombre
+FROM beneficio_instituciones bi
+JOIN instituciones i ON i.id = bi.institucion_id
+ORDER BY bi.beneficio_id, i.nombre
+`
+
+func (q *Queries) ListTodasInstitucionesBeneficios(ctx context.Context) ([]BeneficioInstitucionRow, error) {
+	rows, err := q.db.Query(ctx, listTodasInstitucionesBeneficios)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BeneficioInstitucionRow{}
+	for rows.Next() {
+		var i BeneficioInstitucionRow
+		if err := rows.Scan(
+			&i.BeneficioID,
+			&i.InstitucionID,
 			&i.InstitucionNombre,
 		); err != nil {
 			return nil, err
@@ -104,8 +102,65 @@ func (q *Queries) ListBeneficios(ctx context.Context) ([]ListBeneficiosRow, erro
 	return items, nil
 }
 
+const listInstitucionesPorBeneficio = `-- name: ListInstitucionesPorBeneficio :many
+SELECT bi.beneficio_id, bi.institucion_id, i.nombre AS institucion_nombre
+FROM beneficio_instituciones bi
+JOIN instituciones i ON i.id = bi.institucion_id
+WHERE bi.beneficio_id = $1
+ORDER BY i.nombre
+`
+
+func (q *Queries) ListInstitucionesPorBeneficio(ctx context.Context, beneficioID uuid.UUID) ([]BeneficioInstitucionRow, error) {
+	rows, err := q.db.Query(ctx, listInstitucionesPorBeneficio, beneficioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BeneficioInstitucionRow{}
+	for rows.Next() {
+		var i BeneficioInstitucionRow
+		if err := rows.Scan(
+			&i.BeneficioID,
+			&i.InstitucionID,
+			&i.InstitucionNombre,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertBeneficioInstitucion = `-- name: InsertBeneficioInstitucion :exec
+INSERT INTO beneficio_instituciones (beneficio_id, institucion_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type InsertBeneficioInstitucionParams struct {
+	BeneficioID   uuid.UUID `json:"beneficio_id"`
+	InstitucionID uuid.UUID `json:"institucion_id"`
+}
+
+func (q *Queries) InsertBeneficioInstitucion(ctx context.Context, arg InsertBeneficioInstitucionParams) error {
+	_, err := q.db.Exec(ctx, insertBeneficioInstitucion, arg.BeneficioID, arg.InstitucionID)
+	return err
+}
+
+const deleteBeneficioInstituciones = `-- name: DeleteBeneficioInstituciones :exec
+DELETE FROM beneficio_instituciones WHERE beneficio_id = $1
+`
+
+func (q *Queries) DeleteBeneficioInstituciones(ctx context.Context, beneficioID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteBeneficioInstituciones, beneficioID)
+	return err
+}
+
 const toggleBeneficioActivo = `-- name: ToggleBeneficioActivo :one
-UPDATE beneficios SET activo = $2 WHERE id = $1 RETURNING id, institucion_id, nombre, activo
+UPDATE beneficios SET activo = $2 WHERE id = $1 RETURNING id, nombre, activo
 `
 
 type ToggleBeneficioActivoParams struct {
@@ -118,7 +173,6 @@ func (q *Queries) ToggleBeneficioActivo(ctx context.Context, arg ToggleBeneficio
 	var i Beneficio
 	err := row.Scan(
 		&i.ID,
-		&i.InstitucionID,
 		&i.Nombre,
 		&i.Activo,
 	)
@@ -127,16 +181,15 @@ func (q *Queries) ToggleBeneficioActivo(ctx context.Context, arg ToggleBeneficio
 
 const updateBeneficio = `-- name: UpdateBeneficio :one
 UPDATE beneficios
-SET nombre = $2, activo = $3, institucion_id = $4
+SET nombre = $2, activo = $3
 WHERE id = $1
-RETURNING id, institucion_id, nombre, activo
+RETURNING id, nombre, activo
 `
 
 type UpdateBeneficioParams struct {
-	ID            uuid.UUID   `json:"id"`
-	Nombre        string      `json:"nombre"`
-	Activo        bool        `json:"activo"`
-	InstitucionID pgtype.UUID `json:"institucion_id"`
+	ID     uuid.UUID `json:"id"`
+	Nombre string    `json:"nombre"`
+	Activo bool      `json:"activo"`
 }
 
 func (q *Queries) UpdateBeneficio(ctx context.Context, arg UpdateBeneficioParams) (Beneficio, error) {
@@ -144,12 +197,10 @@ func (q *Queries) UpdateBeneficio(ctx context.Context, arg UpdateBeneficioParams
 		arg.ID,
 		arg.Nombre,
 		arg.Activo,
-		arg.InstitucionID,
 	)
 	var i Beneficio
 	err := row.Scan(
 		&i.ID,
-		&i.InstitucionID,
 		&i.Nombre,
 		&i.Activo,
 	)

@@ -36,8 +36,10 @@ type ClienteRepository interface {
 	Crear(ctx context.Context, c domain.Cliente) (domain.Cliente, error)
 	GetByID(ctx context.Context, id uuid.UUID) (domain.ClienteConInstitucion, error)
 	GetByDNI(ctx context.Context, dni string) (domain.ClienteConInstitucion, error)
+	Buscar(ctx context.Context, q string) ([]domain.ClienteConInstitucion, error)
 	List(ctx context.Context) ([]domain.ClienteConInstitucion, error)
 	Actualizar(ctx context.Context, c domain.Cliente) (domain.Cliente, error)
+	Eliminar(ctx context.Context, id uuid.UUID) error
 	Historial(ctx context.Context, clienteID uuid.UUID) ([]domain.Compra, error)
 	CondicionesPorInstitucion(ctx context.Context, institucionID *uuid.UUID) ([]domain.BeneficioDisponible, error)
 

@@ -16,6 +16,7 @@ export type { dto_ActualizarProductoRequest } from './models/dto_ActualizarProdu
 export { dto_ActualizarUsuarioRequest } from './models/dto_ActualizarUsuarioRequest';
 export type { dto_BeneficioAdminResponse } from './models/dto_BeneficioAdminResponse';
 export type { dto_BeneficioDisponibleResponse } from './models/dto_BeneficioDisponibleResponse';
+export type { dto_BeneficioInstitucionResponse } from './models/dto_BeneficioInstitucionResponse';
 export type { dto_CategoriaAdminResponse } from './models/dto_CategoriaAdminResponse';
 export type { dto_CategoriaMenuResponse } from './models/dto_CategoriaMenuResponse';
 export type { dto_ClienteResponse } from './models/dto_ClienteResponse';

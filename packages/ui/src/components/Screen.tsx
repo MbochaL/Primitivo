@@ -80,5 +80,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     gap: theme.spacing.md,
+    alignItems: 'center',
   },
 });

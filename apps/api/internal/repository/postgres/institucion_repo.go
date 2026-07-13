@@ -67,18 +67,21 @@ func (r *InstitucionRepo) Actualizar(ctx context.Context, i domain.Institucion) 
 	return aInstitucionDominio(row), nil
 }
 
-// Eliminar nullifica las FKs de clientes y beneficios hacia esta institución y luego la borra.
+// Eliminar borra la institución. Falla si tiene clientes o beneficios asignados (FK RESTRICT).
 func (r *InstitucionRepo) Eliminar(ctx context.Context, id uuid.UUID) error {
 	if _, err := r.q.GetInstitucionByID(ctx, id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrInstitucionNoEncontrada
+		}
 		return err
 	}
-	if err := r.q.NullifyClientesInstitucion(ctx, id); err != nil {
+	if err := r.q.DeleteInstitucion(ctx, id); err != nil {
+		if esViolacionFK(err) {
+			return domain.ErrInstitucionConDependencias
+		}
 		return err
 	}
-	if err := r.q.NullifyBeneficiosInstitucion(ctx, id); err != nil {
-		return err
-	}
-	return r.q.DeleteInstitucion(ctx, id)
+	return nil
 }
 
 func aInstitucionDominio(row sqlc.Institucione) domain.Institucion {

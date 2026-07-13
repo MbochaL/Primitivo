@@ -99,8 +99,8 @@ export default function ComprasScreen() {
   const menuQ = useQuery({ queryKey: ['menu'], queryFn: () => MenuService.getMenu() });
 
   const clienteQ = useQuery({
-    queryKey: ['clientes', 'dni', buscado],
-    queryFn: () => ClientesService.getClientes(buscado ?? undefined),
+    queryKey: ['clientes', 'q', buscado],
+    queryFn: () => ClientesService.getClientes(undefined, buscado ?? undefined),
     enabled: !!buscado,
   });
   const cliente = clienteQ.data?.[0];
@@ -248,12 +248,11 @@ export default function ComprasScreen() {
                 if (c?.dni) { setDni(c.dni); setBuscado(c.dni); }
               }}
               loading={clienteQ.isFetching}
-              keyboardType="number-pad"
-              placeholder="Buscar cliente por DNI…"
+              placeholder="Buscar por DNI o nombre…"
               onSubmitEditing={() => { if (dni.trim()) setBuscado(dni.trim()); }}
             />
             {buscado && !clienteQ.isLoading && !cliente && (
-              <Caption style={styles.errorText}>No se encontró ningún cliente con ese DNI.</Caption>
+              <Caption style={styles.errorText}>No se encontró ningún cliente.</Caption>
             )}
             {cliente && (
               <Card>
@@ -543,7 +542,7 @@ function PedidoPanel({
         <View style={styles.pedidoAlert}>
           <Icon name="info-outline" size={15} color={theme.colors.onSurfaceVariant} />
           <Caption style={[styles.pedidoAlertText, { flex: 1 }]}>
-            Buscá un cliente por DNI para poder confirmar la compra.
+            Buscá un cliente por DNI o nombre para poder confirmar la compra.
           </Caption>
         </View>
       )}

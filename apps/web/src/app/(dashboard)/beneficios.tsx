@@ -88,7 +88,7 @@ const formatTrigger = (c: dto_CondicionResponse) => {
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
 const beneficioSchema = z.object({
-  institucion_id: z.string().uuid().nullable().optional(),
+  institucion_ids: z.array(z.string().uuid()).min(1, 'Debe seleccionar al menos una institución'),
   nombre: z.string().min(1, 'Nombre requerido'),
   activo: z.boolean().default(true),
 });
@@ -179,7 +179,7 @@ export default function BeneficiosScreen() {
     return beneficios.filter(
       (b) =>
         b.nombre?.toLowerCase().includes(q) ||
-        b.institucion_nombre?.toLowerCase().includes(q),
+        b.instituciones?.some((i) => i.nombre?.toLowerCase().includes(q)),
     );
   }, [beneficios, query]);
 
@@ -187,7 +187,7 @@ export default function BeneficiosScreen() {
     return filtrados.slice(0, 8).map((b) => ({
       id: b.id ?? '',
       label: b.nombre ?? '',
-      sublabel: b.institucion_nombre ?? 'Global',
+      sublabel: b.instituciones?.map((i) => i.nombre).join(', ') ?? '',
       meta: b.condiciones?.length ? `${b.condiciones.length} cond.` : undefined,
       icon: 'loyalty' as const,
       inactive: !b.activo,
@@ -198,7 +198,7 @@ export default function BeneficiosScreen() {
   const crearBeneficio = useMutation({
     mutationFn: (d: BeneficioForm) =>
       BeneficiosService.postBeneficios({
-        institucion_id: d.institucion_id,
+        institucion_ids: d.institucion_ids,
         nombre: d.nombre,
       }),
     onSuccess: () => {
@@ -212,7 +212,7 @@ export default function BeneficiosScreen() {
   const editarBeneficio = useMutation({
     mutationFn: ({ id, d }: { id: string; d: BeneficioForm }) =>
       BeneficiosService.putBeneficios(id, {
-        institucion_id: d.institucion_id,
+        institucion_ids: d.institucion_ids,
         nombre: d.nombre,
         activo: d.activo,
       }),
@@ -425,7 +425,9 @@ function BeneficioCard({
       <View style={styles.cardHeader}>
         <View style={styles.cardMeta}>
           <Caption style={styles.instLabel}>
-            {beneficio.institucion_nombre ? beneficio.institucion_nombre.toUpperCase() : 'GLOBAL'}
+            {beneficio.instituciones && beneficio.instituciones.length > 0
+              ? beneficio.instituciones.map((i) => i.nombre).join(', ').toUpperCase()
+              : 'SIN INSTITUCIÓN'}
           </Caption>
           <View style={styles.cardTitleRow}>
             <Heading>{beneficio.nombre}</Heading>
@@ -561,7 +563,8 @@ function BeneficioFormModal({
   } = useForm<BeneficioForm>({
     resolver: zodResolver(beneficioSchema),
     defaultValues: {
-      institucion_id: initial?.institucion_id ?? null,
+      institucion_ids: initial?.instituciones?.map((i) => i.id!).filter(Boolean) ??
+        (instituciones[0]?.id ? [instituciones[0].id] : []),
       nombre: initial?.nombre ?? '',
       activo: initial?.activo ?? true,
     },
@@ -569,11 +572,12 @@ function BeneficioFormModal({
 
   useEffect(() => {
     reset({
-      institucion_id: initial?.institucion_id ?? null,
+      institucion_ids: initial?.instituciones?.map((i) => i.id!).filter(Boolean) ??
+        (instituciones[0]?.id ? [instituciones[0].id] : []),
       nombre: initial?.nombre ?? '',
       activo: initial?.activo ?? true,
     });
-  }, [initial, reset]);
+  }, [initial, instituciones, reset]);
 
   const activoVal = watch('activo');
 
@@ -608,38 +612,38 @@ function BeneficioFormModal({
 
       <Controller
         control={control}
-        name="institucion_id"
+        name="institucion_ids"
         render={({ field }) => (
           <View style={styles.fieldWrap}>
-            <Label>Institución</Label>
+            <Label>Instituciones</Label>
             <View style={styles.chipPicker}>
-              {/* Opción global */}
-              <Pressable
-                style={[styles.chip, !field.value && styles.chipActive]}
-                onPress={() => field.onChange(null)}
-              >
-                <Caption style={!field.value ? { color: theme.colors.white } : undefined}>
-                  Global (todos)
-                </Caption>
-              </Pressable>
-              {instituciones.map((inst) => (
-                <Pressable
-                  key={inst.id}
-                  style={[styles.chip, field.value === inst.id && styles.chipActive]}
-                  onPress={() => inst.id && field.onChange(inst.id)}
-                >
-                  <Caption
-                    style={
-                      field.value === inst.id
-                        ? { color: theme.colors.white }
-                        : undefined
-                    }
+              {instituciones.map((inst) => {
+                const selected = field.value.includes(inst.id ?? '');
+                return (
+                  <Pressable
+                    key={inst.id}
+                    style={[styles.chip, selected && styles.chipActive]}
+                    onPress={() => {
+                      if (!inst.id) return;
+                      if (selected) {
+                        field.onChange(field.value.filter((id) => id !== inst.id));
+                      } else {
+                        field.onChange([...field.value, inst.id]);
+                      }
+                    }}
                   >
-                    {inst.nombre}
-                  </Caption>
-                </Pressable>
-              ))}
+                    <Caption style={selected ? { color: theme.colors.white } : undefined}>
+                      {inst.nombre}
+                    </Caption>
+                  </Pressable>
+                );
+              })}
             </View>
+            {errors.institucion_ids && (
+              <Caption style={{ color: theme.colors.danger }}>
+                {errors.institucion_ids.message}
+              </Caption>
+            )}
           </View>
         )}
       />

@@ -18,11 +18,5 @@ SET nombre = $2,
 WHERE id = $1
 RETURNING *;
 
--- name: NullifyClientesInstitucion :exec
-UPDATE clientes SET institucion_id = NULL WHERE institucion_id = $1;
-
--- name: NullifyBeneficiosInstitucion :exec
-UPDATE beneficios SET institucion_id = NULL WHERE institucion_id = $1;
-
 -- name: DeleteInstitucion :exec
 DELETE FROM instituciones WHERE id = $1;

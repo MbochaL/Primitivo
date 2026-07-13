@@ -54,19 +54,24 @@ func (h *BeneficioHandler) Crear(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
+	instIDs := make([]uuid.UUID, len(req.InstitucionIDs))
+	for i, s := range req.InstitucionIDs {
+		instIDs[i], _ = uuid.Parse(s) // ya validado por binding:"dive,uuid"
+	}
 	b, err := h.svc.CrearBeneficio(c.Request.Context(), domain.NuevoBeneficio{
-		InstitucionID: parseUUIDPtr(req.InstitucionID),
-		Nombre:        req.Nombre,
+		InstitucionIDs: instIDs,
+		Nombre:         req.Nombre,
 	})
 	if err != nil {
 		respondError(c, err)
 		return
 	}
-	// Retornamos el beneficio con detalle (sin condiciones aún).
-	c.JSON(http.StatusCreated, dto.ToBeneficioAdminResponse(domain.BeneficioConDetalle{
-		Beneficio:   b,
-		Condiciones: []domain.Condicion{},
-	}))
+	detalle, err := h.svc.GetBeneficio(c.Request.Context(), b.ID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.ToBeneficioAdminResponse(detalle))
 }
 
 // Actualizar godoc
@@ -91,11 +96,15 @@ func (h *BeneficioHandler) Actualizar(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
+	instIDs := make([]uuid.UUID, len(req.InstitucionIDs))
+	for i, s := range req.InstitucionIDs {
+		instIDs[i], _ = uuid.Parse(s) // ya validado por binding:"dive,uuid"
+	}
 	b, err := h.svc.ActualizarBeneficio(c.Request.Context(), domain.ActualizarBeneficioInput{
-		ID:            id,
-		InstitucionID: parseUUIDPtr(req.InstitucionID),
-		Nombre:        req.Nombre,
-		Activo:        req.Activo,
+		ID:             id,
+		InstitucionIDs: instIDs,
+		Nombre:         req.Nombre,
+		Activo:         req.Activo,
 	})
 	if err != nil {
 		respondError(c, err)

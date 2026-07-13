@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type dto_ActualizarClienteRequest = {
     email?: string;
-    institucion_id?: string;
+    institucion_id: string;
     nombre: string;
 };
 

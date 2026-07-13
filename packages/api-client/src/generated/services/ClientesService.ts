@@ -21,12 +21,14 @@ export class ClientesService {
      */
     public static getClientes(
         dni?: string,
+        q?: string,
     ): CancelablePromise<Array<dto_ClienteResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/clientes',
             query: {
                 'dni': dni,
+                'q': q,
             },
         });
     }
@@ -80,6 +82,26 @@ export class ClientesService {
     ): CancelablePromise<dto_ClienteResponse> {
         return __request(OpenAPI, {
             method: 'GET',
+            url: '/clientes/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Not Found`,
+            },
+        });
+    }
+    /**
+     * Eliminar un cliente (solo administrador)
+     * @param id ID del cliente
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteClientes(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
             url: '/clientes/{id}',
             path: {
                 'id': id,

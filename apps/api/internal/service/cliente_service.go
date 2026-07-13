@@ -37,6 +37,11 @@ func NewClienteService(clientes repository.ClienteRepository) *ClienteService {
 	return &ClienteService{clientes: clientes}
 }
 
+// Buscar devuelve hasta 10 clientes cuyo DNI coincida exactamente o cuyo nombre contenga el texto.
+func (s *ClienteService) Buscar(ctx context.Context, q string) ([]domain.ClienteConInstitucion, error) {
+	return s.clientes.Buscar(ctx, strings.TrimSpace(q))
+}
+
 // BuscarPorDNI es la búsqueda principal del dashboard.
 func (s *ClienteService) BuscarPorDNI(ctx context.Context, dni string) (domain.ClienteConInstitucion, error) {
 	return s.clientes.GetByDNI(ctx, strings.TrimSpace(dni))
@@ -70,6 +75,11 @@ func (s *ClienteService) Actualizar(ctx context.Context, id uuid.UUID, in Actual
 		Email:         in.Email,
 		InstitucionID: in.InstitucionID,
 	})
+}
+
+// Eliminar borra el cliente y en cascada sus compras y canjes.
+func (s *ClienteService) Eliminar(ctx context.Context, id uuid.UUID) error {
+	return s.clientes.Eliminar(ctx, id)
 }
 
 // Historial devuelve las compras del cliente (más recientes primero).

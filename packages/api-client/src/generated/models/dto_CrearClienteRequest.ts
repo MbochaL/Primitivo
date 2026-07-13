@@ -5,7 +5,7 @@
 export type dto_CrearClienteRequest = {
     dni: string;
     email?: string;
-    institucion_id?: string;
+    institucion_id: string;
     nombre: string;
 };
 

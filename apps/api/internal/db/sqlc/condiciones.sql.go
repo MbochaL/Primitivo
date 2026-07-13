@@ -90,12 +90,20 @@ SELECT
     c.scope_trigger_producto_id,
     c.scope_descuento,
     c.scope_descuento_categoria_id,
-    b.institucion_id,
-    b.activo AS beneficio_activo
+    b.activo AS beneficio_activo,
+    EXISTS(
+        SELECT 1 FROM beneficio_instituciones bi
+        WHERE bi.beneficio_id = b.id AND bi.institucion_id = $2
+    ) AS institucion_match
 FROM condiciones c
 JOIN beneficios b ON b.id = c.beneficio_id
 WHERE c.id = $1
 `
+
+type GetCondicionParaCanjeParams struct {
+	ID            uuid.UUID `json:"id"`
+	InstitucionID uuid.UUID `json:"institucion_id"`
+}
 
 type GetCondicionParaCanjeRow struct {
 	ID                        uuid.UUID   `json:"id"`
@@ -112,12 +120,12 @@ type GetCondicionParaCanjeRow struct {
 	ScopeTriggerProductoID    pgtype.UUID `json:"scope_trigger_producto_id"`
 	ScopeDescuento            string      `json:"scope_descuento"`
 	ScopeDescuentoCategoriaID pgtype.UUID `json:"scope_descuento_categoria_id"`
-	InstitucionID             pgtype.UUID `json:"institucion_id"`
 	BeneficioActivo           bool        `json:"beneficio_activo"`
+	InstitucionMatch          bool        `json:"institucion_match"`
 }
 
-func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetCondicionParaCanjeRow, error) {
-	row := q.db.QueryRow(ctx, getCondicionParaCanje, id)
+func (q *Queries) GetCondicionParaCanje(ctx context.Context, arg GetCondicionParaCanjeParams) (GetCondicionParaCanjeRow, error) {
+	row := q.db.QueryRow(ctx, getCondicionParaCanje, arg.ID, arg.InstitucionID)
 	var i GetCondicionParaCanjeRow
 	err := row.Scan(
 		&i.ID,
@@ -134,8 +142,8 @@ func (q *Queries) GetCondicionParaCanje(ctx context.Context, id uuid.UUID) (GetC
 		&i.ScopeTriggerProductoID,
 		&i.ScopeDescuento,
 		&i.ScopeDescuentoCategoriaID,
-		&i.InstitucionID,
 		&i.BeneficioActivo,
+		&i.InstitucionMatch,
 	)
 	return i, err
 }
@@ -198,7 +206,8 @@ SELECT
     b.nombre AS beneficio_nombre
 FROM condiciones c
 JOIN beneficios b ON b.id = c.beneficio_id
-WHERE (b.institucion_id = $1 OR b.institucion_id IS NULL)
+JOIN beneficio_instituciones bi ON bi.beneficio_id = b.id
+WHERE bi.institucion_id = $1
   AND c.vigente = true
   AND b.activo = true
 ORDER BY c.umbral_infusiones ASC

@@ -16,7 +16,8 @@ var (
 	ErrProhibido             = errors.New("no tenés permiso para esta acción")
 
 	// Instituciones
-	ErrInstitucionNoEncontrada = errors.New("institución no encontrada")
+	ErrInstitucionNoEncontrada    = errors.New("institución no encontrada")
+	ErrInstitucionConDependencias = errors.New("la institución tiene clientes o beneficios asignados y no puede eliminarse")
 
 	// Clientes / menú / beneficios
 	ErrClienteNoEncontrado    = errors.New("cliente no encontrado")

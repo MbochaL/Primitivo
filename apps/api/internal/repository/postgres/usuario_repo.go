@@ -113,3 +113,9 @@ func esViolacionUnica(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
+
+// esViolacionFK detecta el error de Postgres de FK violation (código 23503).
+func esViolacionFK(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
+}

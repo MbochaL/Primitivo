@@ -134,7 +134,6 @@ SELECT c.id, c.dni, c.nombre, c.email, c.institucion_id, c.contador_infusiones, 
 FROM clientes c
 LEFT JOIN instituciones i ON i.id = c.institucion_id
 ORDER BY c.created_at DESC
-LIMIT 50
 `
 
 type ListClientesRow struct {
@@ -175,6 +174,56 @@ func (q *Queries) ListClientes(ctx context.Context) ([]ListClientesRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const buscarClientes = `-- name: BuscarClientes :many
+SELECT c.id, c.dni, c.nombre, c.email, c.institucion_id, c.contador_infusiones, c.created_at,
+       i.nombre AS institucion_nombre
+FROM clientes c
+LEFT JOIN instituciones i ON i.id = c.institucion_id
+WHERE c.dni = $1 OR c.nombre ILIKE '%' || $1 || '%'
+ORDER BY
+    CASE WHEN c.dni = $1 THEN 0 ELSE 1 END,
+    c.nombre
+LIMIT 10
+`
+
+func (q *Queries) BuscarClientes(ctx context.Context, buscar string) ([]ListClientesRow, error) {
+	rows, err := q.db.Query(ctx, buscarClientes, buscar)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListClientesRow{}
+	for rows.Next() {
+		var i ListClientesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dni,
+			&i.Nombre,
+			&i.Email,
+			&i.InstitucionID,
+			&i.ContadorInfusiones,
+			&i.CreatedAt,
+			&i.InstitucionNombre,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deleteCliente = `-- name: DeleteCliente :exec
+DELETE FROM clientes WHERE id = $1
+`
+
+func (q *Queries) DeleteCliente(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCliente, id)
+	return err
 }
 
 const reiniciarContadorInfusiones = `-- name: ReiniciarContadorInfusiones :exec

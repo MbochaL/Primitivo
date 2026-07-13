@@ -5,10 +5,10 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/martinbosch1996/primitivo/apps/api/internal/db/sqlc"
 	"github.com/martinbosch1996/primitivo/apps/api/internal/domain"
@@ -26,19 +26,6 @@ func NewBeneficioRepo(pool *pgxpool.Pool) *BeneficioRepo {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-
-func toBeneficio(row sqlc.Beneficio) domain.Beneficio {
-	b := domain.Beneficio{
-		ID:     row.ID,
-		Nombre: row.Nombre,
-		Activo: row.Activo,
-	}
-	if row.InstitucionID.Valid {
-		uid := uuid.UUID(row.InstitucionID.Bytes)
-		b.InstitucionID = &uid
-	}
-	return b
-}
 
 func toCondicion(row sqlc.Condicione) domain.Condicion {
 	c := domain.Condicion{
@@ -74,13 +61,6 @@ func toCondicion(row sqlc.Condicione) domain.Condicion {
 	return c
 }
 
-func uuidPtrToPgtype(id *uuid.UUID) pgtype.UUID {
-	if id == nil {
-		return pgtype.UUID{}
-	}
-	return pgtype.UUID{Bytes: *id, Valid: true}
-}
-
 func intSliceToInt32(s []int) []int32 {
 	if s == nil {
 		return nil
@@ -90,6 +70,24 @@ func intSliceToInt32(s []int) []int32 {
 		out[i] = int32(v)
 	}
 	return out
+}
+
+func uuidPtrToPgtype(id *uuid.UUID) pgtype.UUID {
+	if id == nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: *id, Valid: true}
+}
+
+func toInstitucionesFromRows(rows []sqlc.BeneficioInstitucionRow) []domain.Institucion {
+	insts := make([]domain.Institucion, 0, len(rows))
+	for _, r := range rows {
+		insts = append(insts, domain.Institucion{
+			ID:     r.InstitucionID,
+			Nombre: r.InstitucionNombre,
+		})
+	}
+	return insts
 }
 
 // ── BeneficioRepository ───────────────────────────────────────────────────────
@@ -103,9 +101,22 @@ func (r *BeneficioRepo) ListBeneficios(ctx context.Context) ([]domain.BeneficioC
 	if err != nil {
 		return nil, err
 	}
+	allInsts, err := r.q.ListTodasInstitucionesBeneficios(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	condsByBeneficio := make(map[uuid.UUID][]domain.Condicion, len(rows))
 	for _, c := range allConds {
 		condsByBeneficio[c.BeneficioID] = append(condsByBeneficio[c.BeneficioID], toCondicion(c))
+	}
+
+	instsByBeneficio := make(map[uuid.UUID][]domain.Institucion, len(rows))
+	for _, i := range allInsts {
+		instsByBeneficio[i.BeneficioID] = append(instsByBeneficio[i.BeneficioID], domain.Institucion{
+			ID:     i.InstitucionID,
+			Nombre: i.InstitucionNombre,
+		})
 	}
 
 	out := make([]domain.BeneficioConDetalle, 0, len(rows))
@@ -114,19 +125,14 @@ func (r *BeneficioRepo) ListBeneficios(ctx context.Context) ([]domain.BeneficioC
 		if conds == nil {
 			conds = []domain.Condicion{}
 		}
-		b := domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}
-		if row.InstitucionID.Valid {
-			uid := uuid.UUID(row.InstitucionID.Bytes)
-			b.InstitucionID = &uid
-		}
-		var instNombre *string
-		if row.InstitucionNombre.Valid {
-			instNombre = &row.InstitucionNombre.String
+		insts := instsByBeneficio[row.ID]
+		if insts == nil {
+			insts = []domain.Institucion{}
 		}
 		out = append(out, domain.BeneficioConDetalle{
-			Beneficio:         b,
-			InstitucionNombre: instNombre,
-			Condiciones:       conds,
+			Beneficio:     domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo},
+			Instituciones: insts,
+			Condiciones:   conds,
 		})
 	}
 	return out, nil
@@ -144,43 +150,61 @@ func (r *BeneficioRepo) GetBeneficio(ctx context.Context, id uuid.UUID) (domain.
 	if err != nil {
 		return domain.BeneficioConDetalle{}, err
 	}
+	instRows, err := r.q.ListInstitucionesPorBeneficio(ctx, id)
+	if err != nil {
+		return domain.BeneficioConDetalle{}, err
+	}
 	conds := make([]domain.Condicion, 0, len(condRows))
 	for _, c := range condRows {
 		conds = append(conds, toCondicion(c))
 	}
-	b := domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}
-	if row.InstitucionID.Valid {
-		uid := uuid.UUID(row.InstitucionID.Bytes)
-		b.InstitucionID = &uid
-	}
-	var instNombre *string
-	if row.InstitucionNombre.Valid {
-		instNombre = &row.InstitucionNombre.String
-	}
 	return domain.BeneficioConDetalle{
-		Beneficio:         b,
-		InstitucionNombre: instNombre,
-		Condiciones:       conds,
+		Beneficio:     domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo},
+		Instituciones: toInstitucionesFromRows(instRows),
+		Condiciones:   conds,
 	}, nil
 }
 
 func (r *BeneficioRepo) CrearBeneficio(ctx context.Context, n domain.NuevoBeneficio) (domain.Beneficio, error) {
-	row, err := r.q.CreateBeneficio(ctx, sqlc.CreateBeneficioParams{
-		InstitucionID: uuidPtrToPgtype(n.InstitucionID),
-		Nombre:        n.Nombre,
-	})
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return domain.Beneficio{}, err
 	}
-	return toBeneficio(row), nil
+	defer tx.Rollback(ctx)
+
+	q := sqlc.New(tx)
+
+	row, err := q.CreateBeneficio(ctx, n.Nombre)
+	if err != nil {
+		return domain.Beneficio{}, err
+	}
+	for _, instID := range n.InstitucionIDs {
+		if err := q.InsertBeneficioInstitucion(ctx, sqlc.InsertBeneficioInstitucionParams{
+			BeneficioID:   row.ID,
+			InstitucionID: instID,
+		}); err != nil {
+			return domain.Beneficio{}, err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return domain.Beneficio{}, err
+	}
+	return domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}, nil
 }
 
 func (r *BeneficioRepo) ActualizarBeneficio(ctx context.Context, u domain.ActualizarBeneficioInput) (domain.Beneficio, error) {
-	row, err := r.q.UpdateBeneficio(ctx, sqlc.UpdateBeneficioParams{
-		ID:            u.ID,
-		Nombre:        u.Nombre,
-		Activo:        u.Activo,
-		InstitucionID: uuidPtrToPgtype(u.InstitucionID),
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return domain.Beneficio{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	q := sqlc.New(tx)
+
+	row, err := q.UpdateBeneficio(ctx, sqlc.UpdateBeneficioParams{
+		ID:     u.ID,
+		Nombre: u.Nombre,
+		Activo: u.Activo,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Beneficio{}, domain.ErrBeneficioNoEncontrado
@@ -188,7 +212,21 @@ func (r *BeneficioRepo) ActualizarBeneficio(ctx context.Context, u domain.Actual
 	if err != nil {
 		return domain.Beneficio{}, err
 	}
-	return toBeneficio(row), nil
+	if err := q.DeleteBeneficioInstituciones(ctx, u.ID); err != nil {
+		return domain.Beneficio{}, err
+	}
+	for _, instID := range u.InstitucionIDs {
+		if err := q.InsertBeneficioInstitucion(ctx, sqlc.InsertBeneficioInstitucionParams{
+			BeneficioID:   u.ID,
+			InstitucionID: instID,
+		}); err != nil {
+			return domain.Beneficio{}, err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return domain.Beneficio{}, err
+	}
+	return domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}, nil
 }
 
 func (r *BeneficioRepo) DesactivarBeneficio(ctx context.Context, id uuid.UUID) (domain.Beneficio, error) {
@@ -202,7 +240,7 @@ func (r *BeneficioRepo) DesactivarBeneficio(ctx context.Context, id uuid.UUID) (
 	if err != nil {
 		return domain.Beneficio{}, err
 	}
-	return toBeneficio(row), nil
+	return domain.Beneficio{ID: row.ID, Nombre: row.Nombre, Activo: row.Activo}, nil
 }
 
 // EliminarBeneficio borra el beneficio. Condiciones y canjes cascadean via FK.

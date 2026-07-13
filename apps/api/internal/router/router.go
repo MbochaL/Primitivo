@@ -69,8 +69,9 @@ func New(cfg config.Config, jwtManager *jwt.Manager, h Handlers) *gin.Engine {
 			admin := protegidas.Group("")
 			admin.Use(middleware.RequireRole(string(domain.RolAdministrador)))
 			{
-				// Importación masiva de clientes
+				// Importación masiva y eliminación de clientes
 				admin.POST("/clientes/importar", h.Cliente.ImportarClientes)
+				admin.DELETE("/clientes/:id", h.Cliente.Eliminar)
 
 				// Usuarios del sistema
 				admin.GET("/usuarios", h.Usuario.List)

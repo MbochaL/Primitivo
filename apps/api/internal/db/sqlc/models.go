@@ -10,10 +10,15 @@ import (
 )
 
 type Beneficio struct {
-	ID            uuid.UUID   `json:"id"`
-	InstitucionID pgtype.UUID `json:"institucion_id"`
-	Nombre        string      `json:"nombre"`
-	Activo        bool        `json:"activo"`
+	ID     uuid.UUID `json:"id"`
+	Nombre string    `json:"nombre"`
+	Activo bool      `json:"activo"`
+}
+
+type BeneficioInstitucionRow struct {
+	BeneficioID        uuid.UUID `json:"beneficio_id"`
+	InstitucionID      uuid.UUID `json:"institucion_id"`
+	InstitucionNombre  string    `json:"institucion_nombre"`
 }
 
 type Canje struct {

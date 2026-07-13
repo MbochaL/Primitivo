@@ -32,6 +32,15 @@ func NewClienteHandler(clientes *service.ClienteService) *ClienteHandler {
 //	@Success	200	{array}	dto.ClienteResponse
 //	@Router		/clientes [get]
 func (h *ClienteHandler) List(c *gin.Context) {
+	if q := c.Query("q"); q != "" {
+		clientes, err := h.clientes.Buscar(c.Request.Context(), q)
+		if err != nil {
+			respondError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ToClienteResponseList(clientes))
+		return
+	}
 	if dni := c.Query("dni"); dni != "" {
 		cliente, err := h.clientes.BuscarPorDNI(c.Request.Context(), dni)
 		if err != nil {
@@ -95,11 +104,12 @@ func (h *ClienteHandler) Crear(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
+	instID, _ := uuid.Parse(req.InstitucionID) // ya validado por binding:"required,uuid"
 	cliente, err := h.clientes.Crear(c.Request.Context(), service.CrearClienteInput{
 		DNI:           req.DNI,
 		Nombre:        req.Nombre,
 		Email:         req.Email,
-		InstitucionID: optionalUUID(req.InstitucionID),
+		InstitucionID: &instID,
 	})
 	if err != nil {
 		respondError(c, err)
@@ -130,10 +140,11 @@ func (h *ClienteHandler) Actualizar(c *gin.Context) {
 		respondValidation(c, err)
 		return
 	}
+	instID, _ := uuid.Parse(req.InstitucionID) // ya validado por binding:"required,uuid"
 	cliente, err := h.clientes.Actualizar(c.Request.Context(), id, service.ActualizarClienteInput{
 		Nombre:        req.Nombre,
 		Email:         req.Email,
-		InstitucionID: optionalUUID(req.InstitucionID),
+		InstitucionID: &instID,
 	})
 	if err != nil {
 		respondError(c, err)
@@ -188,6 +199,28 @@ func (h *ClienteHandler) Beneficios(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToBeneficioDisponibleResponseList(beneficios))
 }
 
+// Eliminar godoc
+//
+//	@Summary	Eliminar un cliente (solo administrador)
+//	@Tags		clientes
+//	@Produce	json
+//	@Security	BearerAuth
+//	@Param		id	path	string	true	"ID del cliente"
+//	@Success	204
+//	@Failure	404	{object}	response.ErrorResponse
+//	@Router		/clientes/{id} [delete]
+func (h *ClienteHandler) Eliminar(c *gin.Context) {
+	id, ok := parseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.clientes.Eliminar(c.Request.Context(), id); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // ImportarClientes godoc
 //
 //	@Summary	Importar clientes en lote (solo administrador)
@@ -208,11 +241,12 @@ func (h *ClienteHandler) ImportarClientes(c *gin.Context) {
 
 	items := make([]service.ImportarClienteItemInput, len(req.Clientes))
 	for i, item := range req.Clientes {
+		instID, _ := uuid.Parse(item.InstitucionID) // ya validado por binding:"required,uuid"
 		items[i] = service.ImportarClienteItemInput{
 			DNI:           item.DNI,
 			Nombre:        item.Nombre,
 			Email:         item.Email,
-			InstitucionID: optionalUUID(item.InstitucionID),
+			InstitucionID: &instID,
 		}
 	}
 

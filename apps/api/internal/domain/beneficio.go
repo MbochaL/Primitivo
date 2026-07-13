@@ -27,12 +27,11 @@ type BeneficioDisponible struct {
 
 // ── Entidades admin ──────────────────────────────────────────────────────────
 
-// Beneficio es un programa de beneficios. InstitucionID nil = beneficio global (aplica a todos los clientes).
+// Beneficio es un programa de beneficios que puede pertenecer a múltiples instituciones.
 type Beneficio struct {
-	ID            uuid.UUID
-	InstitucionID *uuid.UUID
-	Nombre        string
-	Activo        bool
+	ID     uuid.UUID
+	Nombre string
+	Activo bool
 }
 
 // Condicion es una regla dentro de un beneficio.
@@ -57,27 +56,27 @@ type Condicion struct {
 	ScopeDescuentoCategoriaID *uuid.UUID
 }
 
-// BeneficioConDetalle es el read-model admin de un beneficio con su institución y condiciones.
+// BeneficioConDetalle es el read-model admin de un beneficio con sus instituciones y condiciones.
 type BeneficioConDetalle struct {
 	Beneficio
-	InstitucionNombre *string
-	Condiciones       []Condicion
+	Instituciones []Institucion
+	Condiciones   []Condicion
 }
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 
-// NuevoBeneficio es el input para crear un beneficio (admin). InstitucionID nil = global.
+// NuevoBeneficio es el input para crear un beneficio (admin).
 type NuevoBeneficio struct {
-	InstitucionID *uuid.UUID
-	Nombre        string
+	InstitucionIDs []uuid.UUID
+	Nombre         string
 }
 
-// ActualizarBeneficioInput es el input para editar un beneficio (admin). InstitucionID nil = global.
+// ActualizarBeneficioInput es el input para editar un beneficio (admin).
 type ActualizarBeneficioInput struct {
-	ID            uuid.UUID
-	InstitucionID *uuid.UUID
-	Nombre        string
-	Activo        bool
+	ID             uuid.UUID
+	InstitucionIDs []uuid.UUID
+	Nombre         string
+	Activo         bool
 }
 
 // NuevaCondicion es el input para crear una condición (admin).

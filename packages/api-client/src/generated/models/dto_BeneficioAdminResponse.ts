@@ -2,13 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { dto_BeneficioInstitucionResponse } from './dto_BeneficioInstitucionResponse';
 import type { dto_CondicionResponse } from './dto_CondicionResponse';
 export type dto_BeneficioAdminResponse = {
     activo?: boolean;
     condiciones?: Array<dto_CondicionResponse>;
     id?: string;
-    institucion_id?: string | null;
-    institucion_nombre?: string | null;
+    instituciones?: Array<dto_BeneficioInstitucionResponse>;
     nombre?: string;
 };
-

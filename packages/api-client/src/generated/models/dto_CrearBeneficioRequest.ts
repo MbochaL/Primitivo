@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type dto_CrearBeneficioRequest = {
-    institucion_id?: string | null;
+    institucion_ids: Array<string>;
     nombre: string;
 };
-

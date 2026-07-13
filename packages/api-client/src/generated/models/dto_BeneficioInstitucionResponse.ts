@@ -2,8 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type dto_ActualizarBeneficioRequest = {
-    activo?: boolean;
-    institucion_ids: Array<string>;
-    nombre: string;
+export type dto_BeneficioInstitucionResponse = {
+    id?: string;
+    nombre?: string;
 };

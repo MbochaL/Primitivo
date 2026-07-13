@@ -7,6 +7,6 @@ export type dto_ImportarClientesRequest = {
         dni: string;
         nombre: string;
         email?: string | null;
-        institucion_id?: string | null;
+        institucion_id: string;
     }>;
 };
