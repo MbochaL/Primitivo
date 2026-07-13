@@ -127,16 +127,15 @@ function TopBar({ onLogout }: { onLogout: () => void }) {
 function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
-  // Más de 4 ítems → scrollable con ancho fijo por tab para que no se compriman.
   const scrollable = items.length > 4;
 
-  const tabs = items.map((item) => {
+  const renderTab = (item: NavItem) => {
     const active = isActive(pathname, item.href);
     return (
       <Pressable
         key={item.href}
         onPress={() => router.navigate(item.href as Href)}
-        style={[styles.tab, scrollable && styles.tabFixed, active && styles.tabActive]}
+        style={[scrollable ? styles.tabFixed : styles.tab, active && styles.tabActive]}
         accessibilityLabel={item.label}
       >
         <Icon
@@ -149,7 +148,7 @@ function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) 
         </Text>
       </Pressable>
     );
-  });
+  };
 
   return (
     <View style={[styles.bottomnav, { paddingBottom: Math.max(bottom, 4) }]}>
@@ -158,13 +157,15 @@ function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) 
           horizontal
           showsHorizontalScrollIndicator={false}
           bounces={false}
-          style={styles.bottomnavScrollOuter}
-          contentContainerStyle={styles.bottomnavScroll}
         >
-          {tabs}
+          <View style={styles.bottomnavRow}>
+            {items.map(renderTab)}
+          </View>
         </ScrollView>
       ) : (
-        <View style={styles.bottomnavRow}>{tabs}</View>
+        <View style={styles.bottomnavRow}>
+          {items.map(renderTab)}
+        </View>
       )}
     </View>
   );
@@ -251,8 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   bottomnavRow: { flexDirection: 'row' },
-  bottomnavScrollOuter: { flex: 1 },
-  bottomnavScroll: { flexDirection: 'row', alignItems: 'stretch' },
+  // Tab para modo no-scrollable: crece para distribuirse en el ancho disponible.
   tab: {
     flex: 1,
     flexDirection: 'column',
@@ -262,10 +262,15 @@ const styles = StyleSheet.create({
     minHeight: 56,
     gap: 3,
   },
-  // Ancho fijo para el modo scrollable (muchos ítems).
+  // Tab para modo scrollable: ancho fijo sin flex para evitar flex-basis: 0 en RNW.
   tabFixed: {
-    flex: 0,
     width: 72,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+    minHeight: 56,
+    gap: 3,
   },
   tabActive: { backgroundColor: theme.colors.black },
   tabLabel: {
