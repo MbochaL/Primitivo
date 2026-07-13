@@ -1,10 +1,11 @@
 import { ComprasService, type dto_CompraListaResponse } from '@primitivo/api-client';
 import {
-  Body,
   Button,
   Caption,
+  Body,
   ConfirmDialog,
   EmptyState,
+  Icon,
   ResponsiveTable,
   Screen,
   TableSkeleton,
@@ -114,7 +115,7 @@ function HistorialContent() {
       onPress={() => setDeleteTarget(c)}
       accessibilityLabel="Eliminar compra"
     >
-      <Body style={{ color: theme.colors.danger, fontSize: 13 }}>✕</Body>
+      <Icon name="delete" size={18} color={theme.colors.danger} />
     </Pressable>
   );
 

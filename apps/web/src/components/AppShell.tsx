@@ -127,24 +127,44 @@ function TopBar({ onLogout }: { onLogout: () => void }) {
 function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
+  // Más de 4 ítems → scrollable con ancho fijo por tab para que no se compriman.
+  const scrollable = items.length > 4;
+
+  const tabs = items.map((item) => {
+    const active = isActive(pathname, item.href);
+    return (
+      <Pressable
+        key={item.href}
+        onPress={() => router.navigate(item.href as Href)}
+        style={[styles.tab, scrollable && styles.tabFixed, active && styles.tabActive]}
+        accessibilityLabel={item.label}
+      >
+        <Icon
+          name={item.icon}
+          size={22}
+          color={active ? theme.colors.white : theme.colors.onSurfaceVariant}
+        />
+        <Text style={[styles.tabLabel, active && styles.tabLabelActive]} numberOfLines={1}>
+          {item.label}
+        </Text>
+      </Pressable>
+    );
+  });
+
   return (
-    <View style={[styles.bottomnav, { paddingBottom: bottom }]}>
-      {items.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Pressable
-            key={item.href}
-            onPress={() => router.navigate(item.href as Href)}
-            style={[styles.tab, active && styles.tabActive]}
-          >
-            <Icon
-              name={item.icon}
-              size={24}
-              color={active ? theme.colors.white : theme.colors.onSurfaceVariant}
-            />
-          </Pressable>
-        );
-      })}
+    <View style={[styles.bottomnav, { paddingBottom: Math.max(bottom, 4) }]}>
+      {scrollable ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={styles.bottomnavScroll}
+        >
+          {tabs}
+        </ScrollView>
+      ) : (
+        <View style={styles.bottomnavRow}>{tabs}</View>
+      )}
     </View>
   );
 }
@@ -225,23 +245,33 @@ const styles = StyleSheet.create({
 
   // Bottom nav (mobile)
   bottomnav: {
-    flexDirection: 'row',
     borderTopWidth: 2,
     borderTopColor: theme.colors.black,
     backgroundColor: theme.colors.surface,
   },
+  bottomnavRow: { flexDirection: 'row' },
+  bottomnavScroll: { flexDirection: 'row' },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    paddingVertical: theme.spacing.sm,
+    minHeight: 56,
+    gap: 3,
+  },
+  // Ancho fijo para el modo scrollable (muchos ítems).
+  tabFixed: {
+    flex: 0,
+    width: 72,
   },
   tabActive: { backgroundColor: theme.colors.black },
   tabLabel: {
     fontFamily: theme.typography.fontFamily.label,
-    fontSize: theme.typography.fontSize.labelSm,
+    fontSize: 9,
     color: theme.colors.onSurfaceVariant,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   tabLabelActive: { color: theme.colors.white },
 });

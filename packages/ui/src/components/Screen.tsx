@@ -28,7 +28,6 @@ export function Screen({ children, center = false, scroll = false, style }: Prop
         style={styles.flex}
         contentContainerStyle={[styles.content, style]}
         keyboardShouldPersistTaps="handled"
-        // iOS: ajusta automáticamente el scroll cuando aparece el teclado
         automaticallyAdjustKeyboardInsets
       >
         {children}
@@ -39,10 +38,16 @@ export function Screen({ children, center = false, scroll = false, style }: Prop
   if (center) {
     return (
       <KeyboardAvoidingView
-        style={[styles.flex, styles.center]}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={[styles.content, style]}>{children}</View>
+        <ScrollView
+          contentContainerStyle={[styles.centerOuter]}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
+        >
+          <View style={[styles.centerContent, style]}>{children}</View>
+        </ScrollView>
       </KeyboardAvoidingView>
     );
   }
@@ -57,14 +62,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
+  // Modo scroll y default: ocupa todo el espacio disponible.
   content: {
     flexGrow: 1,
     padding: theme.spacing.xl,
     gap: theme.spacing.md,
   },
-  center: {
+  // Modo center: el ScrollView exterior permite desplazarse si el teclado comprime la pantalla.
+  centerOuter: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  // El contenedor del form: ancho completo, sin flexGrow para que el padre lo centre.
+  centerContent: {
+    width: '100%',
+    maxWidth: 480,
+    gap: theme.spacing.md,
   },
 });
