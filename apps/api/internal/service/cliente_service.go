@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -99,6 +100,50 @@ func (s *ClienteService) BeneficiosDisponibles(ctx context.Context, clienteID uu
 		}
 	}
 	return conds, nil
+}
+
+// ImportarClienteItemInput son los datos de un cliente en un lote de importación.
+type ImportarClienteItemInput struct {
+	DNI           string
+	Nombre        string
+	Email         *string
+	InstitucionID *uuid.UUID
+}
+
+// ImportResult es el resultado de una importación masiva de clientes.
+type ImportResult struct {
+	Creados    int
+	Duplicados int
+	Errores    []ImportError
+}
+
+// ImportError describe un registro que no se pudo importar.
+type ImportError struct {
+	DNI    string
+	Nombre string
+	Error  string
+}
+
+// ImportarClientes procesa un lote, ignora duplicados y recopila errores por fila.
+func (s *ClienteService) ImportarClientes(ctx context.Context, items []ImportarClienteItemInput) (ImportResult, error) {
+	result := ImportResult{}
+	for _, item := range items {
+		_, err := s.clientes.Crear(ctx, domain.Cliente{
+			DNI:           strings.TrimSpace(item.DNI),
+			Nombre:        strings.TrimSpace(item.Nombre),
+			Email:         item.Email,
+			InstitucionID: item.InstitucionID,
+		})
+		switch {
+		case err == nil:
+			result.Creados++
+		case errors.Is(err, domain.ErrDNIYaRegistrado):
+			result.Duplicados++
+		default:
+			result.Errores = append(result.Errores, ImportError{DNI: item.DNI, Nombre: item.Nombre, Error: err.Error()})
+		}
+	}
+	return result, nil
 }
 
 // evaluarTrigger determina si la condición está disponible para el cliente ahora.

@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   content: {
+    flexGrow: 1,
     padding: theme.spacing.xl,
     gap: theme.spacing.md,
   },

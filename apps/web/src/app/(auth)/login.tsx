@@ -20,11 +20,6 @@ export default function LoginScreen() {
   const { login, estado, esAdmin } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Si ya hay sesión activa, no tiene sentido mostrar el login.
-  if (estado === 'autenticado') {
-    return <Redirect href={esAdmin ? '/' : '/clientes'} />;
-  }
-
   const {
     control,
     handleSubmit,
@@ -33,6 +28,11 @@ export default function LoginScreen() {
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
+
+  // Si ya hay sesión activa, no tiene sentido mostrar el login.
+  if (estado === 'autenticado') {
+    return <Redirect href={esAdmin ? '/' : '/clientes'} />;
+  }
 
   const onSubmit = handleSubmit(async (data) => {
     setApiError(null);

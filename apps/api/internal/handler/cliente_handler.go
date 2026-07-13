@@ -188,6 +188,52 @@ func (h *ClienteHandler) Beneficios(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToBeneficioDisponibleResponseList(beneficios))
 }
 
+// ImportarClientes godoc
+//
+//	@Summary	Importar clientes en lote (solo administrador)
+//	@Tags		clientes
+//	@Accept		json
+//	@Produce	json
+//	@Security	BearerAuth
+//	@Param		body	body		dto.ImportarClientesRequest		true	"Lista de clientes a importar"
+//	@Success	200		{object}	dto.ImportarClientesResponse
+//	@Failure	400		{object}	response.ErrorResponse
+//	@Router		/clientes/importar [post]
+func (h *ClienteHandler) ImportarClientes(c *gin.Context) {
+	var req dto.ImportarClientesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondValidation(c, err)
+		return
+	}
+
+	items := make([]service.ImportarClienteItemInput, len(req.Clientes))
+	for i, item := range req.Clientes {
+		items[i] = service.ImportarClienteItemInput{
+			DNI:           item.DNI,
+			Nombre:        item.Nombre,
+			Email:         item.Email,
+			InstitucionID: optionalUUID(item.InstitucionID),
+		}
+	}
+
+	result, err := h.clientes.ImportarClientes(c.Request.Context(), items)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	errores := make([]dto.ImportErrorResponse, len(result.Errores))
+	for i, e := range result.Errores {
+		errores[i] = dto.ImportErrorResponse{DNI: e.DNI, Nombre: e.Nombre, Error: e.Error}
+	}
+
+	c.JSON(http.StatusOK, dto.ImportarClientesResponse{
+		Creados:    result.Creados,
+		Duplicados: result.Duplicados,
+		Errores:    errores,
+	})
+}
+
 // optionalUUID parsea un *string (ya validado como uuid por el binding) a *uuid.UUID.
 func optionalUUID(s *string) *uuid.UUID {
 	if s == nil || *s == "" {

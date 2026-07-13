@@ -184,6 +184,20 @@ func ToBeneficioDisponibleResponseList(bs []domain.BeneficioDisponible) []Benefi
 	return out
 }
 
+// ImportErrorResponse describe un registro que no se pudo importar.
+type ImportErrorResponse struct {
+	DNI    string `json:"dni"`
+	Nombre string `json:"nombre"`
+	Error  string `json:"error"`
+}
+
+// ImportarClientesResponse es la respuesta de POST /clientes/importar.
+type ImportarClientesResponse struct {
+	Creados    int                   `json:"creados"`
+	Duplicados int                   `json:"duplicados"`
+	Errores    []ImportErrorResponse `json:"errores"`
+}
+
 // ── Menú ────────────────────────────────────────────────────────────────────
 
 // ProductoResponse es un ítem del menú.

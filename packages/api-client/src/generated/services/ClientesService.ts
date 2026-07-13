@@ -7,6 +7,8 @@ import type { dto_BeneficioDisponibleResponse } from '../models/dto_BeneficioDis
 import type { dto_ClienteResponse } from '../models/dto_ClienteResponse';
 import type { dto_CompraResponse } from '../models/dto_CompraResponse';
 import type { dto_CrearClienteRequest } from '../models/dto_CrearClienteRequest';
+import type { dto_ImportarClientesRequest } from '../models/dto_ImportarClientesRequest';
+import type { dto_ImportarClientesResponse } from '../models/dto_ImportarClientesResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -45,6 +47,25 @@ export class ClientesService {
             errors: {
                 400: `Bad Request`,
                 409: `Conflict`,
+            },
+        });
+    }
+    /**
+     * Importar clientes en lote (solo administrador)
+     * @param requestBody Lista de clientes a importar
+     * @returns dto_ImportarClientesResponse OK
+     * @throws ApiError
+     */
+    public static postClientesImportar(
+        requestBody: dto_ImportarClientesRequest,
+    ): CancelablePromise<dto_ImportarClientesResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/clientes/importar',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad Request`,
             },
         });
     }

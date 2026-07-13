@@ -3,7 +3,9 @@ import {
   ClientesService,
   InstitucionesService,
   type dto_ClienteResponse,
+  type dto_ImportarClientesResponse,
 } from '@primitivo/api-client';
+import * as XLSX from 'xlsx';
 import {
   Body,
   Button,
@@ -30,6 +32,7 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,6 +42,7 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 
+import { useAuth } from '@/lib/auth';
 import { mensajeDeError } from '@/lib/errors';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -92,6 +96,7 @@ export default function ClientesScreen() {
   const qc       = useQueryClient();
   const toast    = useToast();
   const { isMobile, isDesktop } = useBreakpoint();
+  const { esAdmin } = useAuth();
 
   const [query,       setQuery]       = useState('');
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
@@ -101,6 +106,7 @@ export default function ClientesScreen() {
   const [modal, setModal] = useState<
     { mode: 'crear' } | { mode: 'editar'; cliente: dto_ClienteResponse } | null
   >(null);
+  const [importModal, setImportModal] = useState(false);
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const clientesQ = useQuery({
@@ -211,7 +217,17 @@ export default function ClientesScreen() {
       {/* Header */}
       <View style={styles.headerRow}>
         <Title>Clientes</Title>
-        <Button title="Nuevo" icon="person-add" onPress={() => setModal({ mode: 'crear' })} />
+        <View style={styles.headerActions}>
+          {Platform.OS === 'web' && esAdmin && (
+            <Button
+              title="Importar"
+              icon="upload-file"
+              variant="secondary"
+              onPress={() => setImportModal(true)}
+            />
+          )}
+          <Button title="Nuevo" icon="person-add" onPress={() => setModal({ mode: 'crear' })} />
+        </View>
       </View>
 
       {/* SearchBar */}
@@ -364,6 +380,13 @@ export default function ClientesScreen() {
         </View>
       </Screen>
 
+      {importModal && (
+        <ImportarClientesModal
+          onClose={() => setImportModal(false)}
+          onImportado={() => qc.invalidateQueries({ queryKey: ['clientes'] })}
+        />
+      )}
+
       {modal && (
         <ClienteFormModal
           mode={modal.mode}
@@ -456,7 +479,7 @@ function ClienteDetalle({
             <ActivityIndicator color={theme.colors.black} />
           ) : (beneficios.data ?? []).length === 0 ? (
             <Card>
-              <Caption>Su institución no tiene beneficios configurados.</Caption>
+              <Caption>No hay beneficios disponibles para este cliente.</Caption>
             </Card>
           ) : (
             <Card padded={false}>
@@ -638,6 +661,238 @@ function ClienteFormModal({
   );
 }
 
+// ── ImportarClientesModal ─────────────────────────────────────────────────────
+
+type FilaParseada = { dni: string; nombre: string; email?: string };
+
+async function parsearArchivo(file: File): Promise<FilaParseada[]> {
+  let workbook: XLSX.WorkBook;
+  const ext = file.name.toLowerCase().split('.').pop();
+
+  if (ext === 'csv') {
+    const text = await file.text();
+    const primeraLinea = text.split('\n')[0] ?? '';
+    const sep = primeraLinea.includes('|') ? '|' : primeraLinea.includes(';') ? ';' : ',';
+    workbook = XLSX.read(text, { type: 'string', FS: sep });
+  } else {
+    const buffer = await file.arrayBuffer();
+    workbook = XLSX.read(buffer, { type: 'array' });
+  }
+
+  const hoja = workbook.Sheets[workbook.SheetNames[0]];
+  const filas = XLSX.utils.sheet_to_json<unknown[]>(hoja, { header: 1 }) as unknown[][];
+
+  if (filas.length < 2) return [];
+
+  const encabezados = (filas[0] as unknown[]).map((h) =>
+    String(h ?? '').trim().toLowerCase(),
+  );
+
+  const idx = {
+    nombre: encabezados.findIndex(
+      (h) => h.includes('nombre') || h.includes('apellido') || h === 'name',
+    ),
+    dni: encabezados.findIndex(
+      (h) => h === 'dni' || h === 'documento' || h === 'document',
+    ),
+    cuil: encabezados.findIndex((h) => h === 'cuil'),
+    email: encabezados.findIndex((h) => h.includes('email') || h.includes('correo')),
+  };
+
+  if (idx.nombre === -1 || (idx.dni === -1 && idx.cuil === -1)) return [];
+
+  const resultado: FilaParseada[] = [];
+  for (let i = 1; i < filas.length; i++) {
+    const fila = filas[i] as unknown[];
+    const nombre = String(fila[idx.nombre] ?? '').trim();
+    if (!nombre) continue;
+
+    let dni: string;
+    if (idx.dni >= 0 && fila[idx.dni]) {
+      dni = String(fila[idx.dni]).replace(/\D/g, '');
+    } else if (idx.cuil >= 0 && fila[idx.cuil]) {
+      const cuil = String(fila[idx.cuil]).replace(/\D/g, '');
+      // CUIL: 11 dígitos — DNI = posiciones 2-9 (base 0)
+      dni = cuil.length === 11 ? cuil.substring(2, 10) : cuil;
+    } else {
+      continue;
+    }
+
+    if (!dni) continue;
+
+    const emailVal =
+      idx.email >= 0 && fila[idx.email]
+        ? String(fila[idx.email]).trim() || undefined
+        : undefined;
+
+    resultado.push({ nombre, dni, email: emailVal });
+  }
+
+  return resultado;
+}
+
+function ImportarClientesModal({
+  onClose,
+  onImportado,
+}: {
+  onClose: () => void;
+  onImportado: () => void;
+}) {
+  const toast = useToast();
+  const [archivo, setArchivo] = useState<{ nombre: string; filas: FilaParseada[] } | null>(null);
+  const [resultado, setResultado] = useState<dto_ImportarClientesResponse | null>(null);
+  const [importando, setImportando] = useState(false);
+
+  const seleccionarArchivo = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls,.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const filas = await parsearArchivo(file);
+        if (filas.length === 0) {
+          toast.error(
+            'No se encontraron filas válidas. Verificá que el archivo tenga columnas "Nombre" y "DNI" o "CUIL".',
+          );
+          return;
+        }
+        setArchivo({ nombre: file.name, filas });
+        setResultado(null);
+      } catch {
+        toast.error('No se pudo leer el archivo. Verificá el formato.');
+      }
+    };
+    input.click();
+  };
+
+  const importar = async () => {
+    if (!archivo) return;
+    setImportando(true);
+    try {
+      const res = await ClientesService.postClientesImportar({ clientes: archivo.filas });
+      setResultado(res);
+      onImportado();
+    } catch (err) {
+      toast.error(mensajeDeError(err));
+    } finally {
+      setImportando(false);
+    }
+  };
+
+  return (
+    <FormModal
+      visible
+      onClose={onClose}
+      title="Importar clientes"
+      footer={
+        resultado ? (
+          <Button title="Cerrar" onPress={onClose} variant="secondary" fullWidth />
+        ) : (
+          <Button
+            title={
+              archivo
+                ? `Importar ${archivo.filas.length} cliente${archivo.filas.length !== 1 ? 's' : ''}`
+                : 'Seleccionar archivo'
+            }
+            loading={importando}
+            onPress={archivo ? importar : seleccionarArchivo}
+            fullWidth
+          />
+        )
+      }
+    >
+      {/* Zona de carga de archivo */}
+      {!resultado && (
+        <Pressable style={styles.dropzone} onPress={seleccionarArchivo}>
+          <Icon name="upload-file" size={32} color={theme.colors.onSurfaceVariant} />
+          <Body style={{ textAlign: 'center' }}>
+            {archivo ? archivo.nombre : 'Tocá para seleccionar un archivo'}
+          </Body>
+          <Caption style={{ color: theme.colors.onSurfaceVariant }}>
+            .xlsx · .xls · .csv
+          </Caption>
+        </Pressable>
+      )}
+
+      {/* Preview de filas detectadas */}
+      {archivo && !resultado && (
+        <Card>
+          <View style={styles.importStats}>
+            <View style={styles.importStat}>
+              <Text style={styles.importStatNum}>{archivo.filas.length}</Text>
+              <Caption>filas detectadas</Caption>
+            </View>
+          </View>
+        </Card>
+      )}
+
+      {/* Resultado de importación */}
+      {resultado && (
+        <Card>
+          <View style={styles.importStats}>
+            <View style={styles.importStat}>
+              <Text style={[styles.importStatNum, { color: theme.colors.success }]}>
+                {resultado.creados}
+              </Text>
+              <Caption>creados</Caption>
+            </View>
+            <View style={styles.importStat}>
+              <Text style={styles.importStatNum}>{resultado.duplicados}</Text>
+              <Caption>duplicados</Caption>
+            </View>
+            <View style={styles.importStat}>
+              <Text
+                style={[
+                  styles.importStatNum,
+                  resultado.errores.length > 0 && { color: theme.colors.danger },
+                ]}
+              >
+                {resultado.errores.length}
+              </Text>
+              <Caption>errores</Caption>
+            </View>
+          </View>
+          {resultado.errores.length > 0 && (
+            <View style={{ marginTop: theme.spacing.sm, gap: theme.spacing.xs }}>
+              {resultado.errores.slice(0, 5).map((e, i) => (
+                <Caption key={i} style={{ color: theme.colors.danger }}>
+                  {e.nombre} (DNI {e.dni}): {e.error}
+                </Caption>
+              ))}
+              {resultado.errores.length > 5 && (
+                <Caption style={{ color: theme.colors.onSurfaceVariant }}>
+                  ... y {resultado.errores.length - 5} errores más
+                </Caption>
+              )}
+            </View>
+          )}
+        </Card>
+      )}
+
+      {/* Instrucciones */}
+      {!archivo && (
+        <Card>
+          <Caption style={{ color: theme.colors.onSurfaceVariant }}>
+            El archivo necesita columnas con encabezados:{'\n'}
+            {'• '}
+            <Caption style={{ fontWeight: '700' }}>Nombre</Caption>
+            {' o '}
+            <Caption style={{ fontWeight: '700' }}>Apellido y Nombre</Caption>
+            {'\n'}
+            {'• '}
+            <Caption style={{ fontWeight: '700' }}>DNI</Caption>
+            {' o '}
+            <Caption style={{ fontWeight: '700' }}>CUIL</Caption>
+            {' (el DNI se extrae del CUIL automáticamente)'}
+          </Caption>
+        </Card>
+      )}
+    </FormModal>
+  );
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -695,6 +950,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: theme.spacing.md,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+
+  // importación
+  dropzone: {
+    borderWidth: 2,
+    borderColor: theme.colors.black,
+    borderStyle: 'dashed',
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  importStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  importStat: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  importStatNum: {
+    fontFamily: theme.typography.fontFamily.display,
+    fontSize: theme.typography.fontSize.displayXl,
+    color: theme.colors.onSurface,
   },
   conteo: { color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.sm },
 

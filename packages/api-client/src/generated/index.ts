@@ -30,6 +30,8 @@ export { dto_CrearCondicionRequest } from './models/dto_CrearCondicionRequest';
 export type { dto_CrearInstitucionRequest } from './models/dto_CrearInstitucionRequest';
 export type { dto_CrearProductoRequest } from './models/dto_CrearProductoRequest';
 export { dto_CrearUsuarioRequest } from './models/dto_CrearUsuarioRequest';
+export type { dto_ImportarClientesRequest } from './models/dto_ImportarClientesRequest';
+export type { dto_ImportarClientesResponse } from './models/dto_ImportarClientesResponse';
 export type { dto_InstitucionResponse } from './models/dto_InstitucionResponse';
 export type { dto_ItemCompraRequest } from './models/dto_ItemCompraRequest';
 export type { dto_LoginRequest } from './models/dto_LoginRequest';

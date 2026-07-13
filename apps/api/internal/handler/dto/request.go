@@ -141,6 +141,19 @@ type CrearCondicionRequest struct {
 	ScopeDescuentoCategoriaID *string `json:"scope_descuento_categoria_id" binding:"omitempty,uuid"`
 }
 
+// ImportarClienteItem es un cliente dentro del lote de POST /clientes/importar.
+type ImportarClienteItem struct {
+	DNI           string  `json:"dni" binding:"required"`
+	Nombre        string  `json:"nombre" binding:"required"`
+	Email         *string `json:"email" binding:"omitempty,email"`
+	InstitucionID *string `json:"institucion_id" binding:"omitempty,uuid"`
+}
+
+// ImportarClientesRequest es el cuerpo de POST /clientes/importar.
+type ImportarClientesRequest struct {
+	Clientes []ImportarClienteItem `json:"clientes" binding:"required,min=1,dive"`
+}
+
 // ActualizarCondicionRequest es el cuerpo de PUT /condiciones/:id.
 type ActualizarCondicionRequest struct {
 	UmbralInfusiones int    `json:"umbral_infusiones" binding:"min=0"`

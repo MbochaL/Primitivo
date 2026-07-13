@@ -8,9 +8,11 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Vigilar todo el monorepo para que Metro detecte cambios en los paquetes @primitivo/*.
-// Con node-linker=hoisted las dependencias viven en el node_modules raíz; la resolución
-// jerárquica por defecto de Metro las encuentra, así que no hace falta tocar el resolver.
+// Vigilar todo el monorepo y resolver dependencias desde el node_modules raíz (pnpm hoist).
 config.watchFolders = [workspaceRoot];
+config.resolver.nodeModulesPaths = [
+  path.resolve(workspaceRoot, 'node_modules'),
+  path.resolve(projectRoot, 'node_modules'),
+];
 
 module.exports = config;
